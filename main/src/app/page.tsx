@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useAccount } from "wagmi";
 import { BackgroundEffects } from "@/components/ui/BackgroundEffects";
-import { ResourceCards } from "@/components/ui/ResourceCards";
 import { ConnectedState } from "@/components/wallet/ConnectedState";
 import { SignInButton } from "@/components/wallet/SignInButton";
 
@@ -36,7 +35,6 @@ export default function Home() {
         </div>
       </main>
 
-      <ResourceCards />
     </div>
   );
 }

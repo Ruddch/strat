@@ -1,11 +1,10 @@
 import React from "react";
-import { useAccount } from "wagmi";
-import { useLoginWithAbstract } from "@abstract-foundation/agw-react";
+import { useAccount, useDisconnect } from "wagmi";
 import { SendTransaction } from "./SendTransaction";
 
 export function ConnectedState() {
   const { address } = useAccount();
-  const { logout } = useLoginWithAbstract();
+  const { disconnect } = useDisconnect();
 
   if (!address) return null;
 
@@ -25,7 +24,7 @@ export function ConnectedState() {
           <div className="flex flex-col gap-2 w-full">
             <button
               className="rounded-full border border-solid border-white/20 transition-colors flex items-center justify-center bg-white/10 text-white gap-2 hover:bg-white/20 hover:cursor-pointer text-sm px-5 font-[family-name:var(--font-roobert)] w-full sm:flex-1 h-10 py-2"
-              onClick={logout}
+              onClick={() => disconnect()}
             >
               <svg
                 className="w-4 h-4 flex-shrink-0"
