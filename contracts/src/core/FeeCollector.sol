@@ -445,14 +445,14 @@ contract FeeCollector is Ownable, ReentrancyGuard {
     
     /**
      * @dev Check if processing can be triggered
-     * @return canProcess True if threshold is met
+     * @return canProcessNow True if threshold is met
      * @return availableAmount Amount available for processing
      */
-    function canProcess() external view returns (bool canProcess, uint256 availableAmount) {
+    function canProcess() external view returns (bool canProcessNow, uint256 availableAmount) {
         uint256 currentBalance = address(this).balance;
-        canProcess = currentBalance >= threshold;
+        canProcessNow = currentBalance >= threshold;
         
-        if (canProcess) {
+        if (canProcessNow) {
             uint256 afterReserve = currentBalance - gasReserve;
             availableAmount = useAmount > afterReserve ? afterReserve : useAmount;
         }
@@ -460,7 +460,13 @@ contract FeeCollector is Ownable, ReentrancyGuard {
     
     /**
      * @dev Get current contract configuration
-     * @return Configuration struct with all parameters
+     * @return _threshold Current threshold value
+     * @return _useAmount Current use amount
+     * @return _gasReserve Current gas reserve
+     * @return _penguAddress PENGU token address
+     * @return _router Router address
+     * @return _strategyCore StrategyCore address  
+     * @return _treasury Treasury address
      */
     function getConfig() external view returns (
         uint256 _threshold,
