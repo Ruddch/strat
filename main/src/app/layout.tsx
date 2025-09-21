@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Geist, Geist_Mono } from "next/font/google";
 import NextAbstractWalletProvider from "@/components/NextAbstractWalletProvider";
+import { Navigation } from "@/components/Navigation";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -49,6 +50,7 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} ${avenueMono.variable} ${roobert.variable} antialiased`}
         >
+          <Navigation />
           {children}
         </body>
       </NextAbstractWalletProvider>
