@@ -18,6 +18,10 @@ interface IUniswapV2Router02 {
     function WETH() external view returns (address);
 }
 
+interface IBuybackManager {
+    function receiveFromStrategy(address caller) external payable;
+}
+
 /**
  * @title StrategyCore
  * @dev Manages PENGU lots and executes take-profit ladder strategy with oracle pricing
@@ -103,6 +107,8 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
         bool tpExecutionEnabled
     );
     
+    event BuybackTransferFailed(uint256 ethAmount, address buybackManager);
+
     // Oracle events
     event OraclePriceUpdated(uint256 newPrice, uint256 timestamp, address updatedBy);
     event PriceStalenessWarning(uint256 priceAge, uint256 threshold);
@@ -406,38 +412,43 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
      * @return ethReceived Amount of ETH received
      */
     function _sellPengu(uint256 amount) internal returns (uint256 ethReceived) {
-        if (amount == 0) return 0;
+    if (amount == 0) return 0;
+
+    uint256 ethBalanceBefore = address(this).balance;
+
+    // Build swap path
+    address[] memory path = new address[](2);
+    path[0] = penguAddress;
+    path[1] = router.WETH();
+
+    // Approve router
+    IERC20(penguAddress).approve(address(router), amount);
+
+    try router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+        amount,
+        0, // Accept any amount of ETH
+        path,
+        address(this),
+        block.timestamp + MAX_DEADLINE_BUFFER
+    ) {
+        ethReceived = address(this).balance - ethBalanceBefore;
         
-        uint256 ethBalanceBefore = address(this).balance;
-        
-        // Build swap path
-        address[] memory path = new address[](2);
-        path[0] = penguAddress;
-        path[1] = router.WETH();
-        
-        // Approve router
-        IERC20(penguAddress).approve(address(router), amount);
-        
-        try router.swapExactTokensForETHSupportingFeeOnTransferTokens(
-            amount,
-            0, // Accept any amount of ETH
-            path,
-            address(this),
-            block.timestamp + MAX_DEADLINE_BUFFER
-        ) {
-            ethReceived = address(this).balance - ethBalanceBefore;
-            
-            // Send ETH to BuybackManager
-            if (ethReceived > 0) {
-                (bool success, ) = buybackManager.call{value: ethReceived}("");
-                require(success, "ETH transfer failed");
+        // Send ETH to BuybackManager через правильную функцию
+        if (ethReceived > 0) {
+            try IBuybackManager(buybackManager).receiveFromStrategy{value: ethReceived}(tx.origin) {
+                // Success - ETH transferred to BuybackManager
+            } catch {
+                // If BuybackManager call fails, keep ETH on this contract
+                // This prevents the entire transaction from reverting
+                emit BuybackTransferFailed(ethReceived, buybackManager);
             }
-        } catch {
-            // Reset approval on failure
-            IERC20(penguAddress).approve(address(router), 0);
-            revert SwapFailed();
         }
+    } catch {
+        // Reset approval on failure
+        IERC20(penguAddress).approve(address(router), 0);
+        revert SwapFailed();
     }
+}
     
     /**
      * @dev Advance head pointer to next active lot

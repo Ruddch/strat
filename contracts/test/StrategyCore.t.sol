@@ -55,13 +55,24 @@ contract MockRouter {
 // Mock Buyback Manager
 contract MockBuybackManager {
     uint256 public receivedETH;
+    address public lastCaller;
+    bool public shouldRevert = false;
     
-    receive() external payable {
+    function receiveFromStrategy(address caller) external payable {
+        if (shouldRevert) {
+            revert("Mock revert");
+        }
         receivedETH += msg.value;
+        lastCaller = caller;
     }
     
-    fallback() external payable {
-        receivedETH += msg.value;
+    function setShouldRevert(bool _shouldRevert) external {
+        shouldRevert = _shouldRevert;
+    }
+    
+    function reset() external {
+        receivedETH = 0;
+        lastCaller = address(0);
     }
 }
 
@@ -69,7 +80,7 @@ contract StrategyCoreTest is Test {
     StrategyCore public core;
     MockPengu public pengu;
     MockRouter public router;
-    MockBuybackManager public buyback;
+    MockBuybackManager buyback;
     
     address public owner = address(0x1);
     address public feeCollector = address(0x2);
@@ -80,6 +91,8 @@ contract StrategyCoreTest is Test {
     uint256 constant INITIAL_PRICE = 0.001 ether; // 0.001 ETH per PENGU
     uint256 constant TEST_DEPOSIT_AMOUNT = 1000e18; // 1000 PENGU
     uint256 constant TEST_ETH_SPENT = 1 ether; // 1 ETH
+
+    event BuybackTransferFailed(uint256 ethAmount, address buybackManager);
     
     event PenguDeposited(
         uint256 indexed lotId,
@@ -413,6 +426,51 @@ contract StrategyCoreTest is Test {
         core.checkAndExecuteTP(0);
     }
 
+
+    function testBuybackIntegration() public {
+        _setupTPTest();
+
+        StrategyCore.TP[] memory ladder = new StrategyCore.TP[](3);
+        ladder[0] = StrategyCore.TP(1500, 3000); // 1.5x, 30%
+        ladder[1] = StrategyCore.TP(2000, 4000); // 2.0x, 40%
+        ladder[2] = StrategyCore.TP(3000, 3000); // 3.0x, 30%
+
+        vm.prank(owner);
+        core.setTPLadder(ladder);
+
+        uint256 triggerPrice = 0.0015 ether; // 1.5x of 0.001
+        vm.prank(owner);
+        core.updatePenguPrice(triggerPrice);
+
+        core.checkAndExecuteTP(0);
+
+        assertGt(buyback.receivedETH(), 0);
+        assertEq(buyback.lastCaller(), tx.origin);
+    }
+
+    function testBuybackManagerFailure() public {
+        _setupTPTest();
+
+        buyback.setShouldRevert(true);
+
+        StrategyCore.TP[] memory ladder = new StrategyCore.TP[](1);
+        ladder[0] = StrategyCore.TP(1500, 10000); // Весь лот при 1.5x
+
+        vm.prank(owner);
+        core.setTPLadder(ladder);
+
+        uint256 triggerPrice = 0.0015 ether;
+        vm.prank(owner);
+        core.updatePenguPrice(triggerPrice);
+
+        uint256 coreBalanceBefore = address(core).balance;
+        
+        core.checkAndExecuteTP(0);
+
+        assertGt(address(core).balance, coreBalanceBefore);
+        assertEq(buyback.receivedETH(), 0);
+    }
+
     // ==================== ADMIN FUNCTION TESTS ====================
 
     function testSetRouter() public {
@@ -586,11 +644,14 @@ contract StrategyCoreTest is Test {
         // Set initial price
         vm.prank(owner);
         core.updatePenguPrice(INITIAL_PRICE);
-        
+
         // Unpause
         vm.prank(owner);
         core.unpause();
-        
+
+
+        buyback.reset();
+
         // Deposit PENGU
         vm.prank(feeCollector);
         core.depositPengu(TEST_DEPOSIT_AMOUNT, TEST_ETH_SPENT);
