@@ -365,6 +365,28 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
     }
     
     /**
+     * @notice Check and execute take profit for specific lots
+     * @param lotIds Array of lot IDs to check and process
+     */
+    function checkAndExecuteTPForLots(uint256[] calldata lotIds) 
+        external 
+        whenNotPaused 
+        nonReentrant 
+        tpEnabled
+    {
+        uint256 currentPrice = getPenguPrice();
+        
+        for (uint256 i = 0; i < lotIds.length; i++) {
+            uint256 lotId = lotIds[i];
+            
+            // Check if lot exists and is active
+            if (lotId < lotTail && lots[lotId].active) {
+                _processTPLadder(lotId, lots[lotId], currentPrice);
+            }
+        }
+    }
+
+    /**
      * @dev Internal function to process TP ladder for a lot
      */
     function _processTPLadder(uint256 lotId, Lot storage lot, uint256 currentPrice) internal {
@@ -505,7 +527,49 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
         tpLevels = tpLadder.length;
         currentPrice = isPriceFresh() ? penguOraclePrice : 0;
     }
-    
+
+    /**
+     * @notice Get last oracle price without freshness check
+     * @return price Last recorded price from oracle
+     * @return lastUpdated Timestamp when price was last updated
+     */
+    function getLastOraclePrice() external view returns (uint256 price, uint256 lastUpdated) {
+        price = penguOraclePrice;
+        lastUpdated = penguPriceLastUpdated;
+    }
+
+    /**
+     * @notice Get all active lots with full information
+     * @return lotIds Array of active lot IDs
+     * @return activeLots Array of corresponding Lot structures
+     */
+    function getAllActiveLots() external view returns (
+        uint256[] memory lotIds,
+        Lot[] memory activeLots
+    ) {
+        // First pass: count active lots
+        uint256 count = 0;
+        for (uint256 i = lotHead; i < lotTail; i++) {
+            if (lots[i].active) {
+                count++;
+            }
+        }
+        
+        // Initialize arrays
+        lotIds = new uint256[](count);
+        activeLots = new Lot[](count);
+        
+        // Second pass: populate arrays
+        uint256 idx = 0;
+        for (uint256 i = lotHead; i < lotTail; i++) {
+            if (lots[i].active) {
+                lotIds[idx] = i;
+                activeLots[idx] = lots[i];
+                idx++;
+            }
+        }
+    }
+        
     // ==================== ADMIN FUNCTIONS ====================
     
     /**

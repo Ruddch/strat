@@ -606,6 +606,66 @@ contract StrategyCoreTest is Test {
         core.getLot(999);
     }
 
+    function testGetLastOraclePrice() public {
+        // Initially should return 0
+        (uint256 price, uint256 lastUpdated) = core.getLastOraclePrice();
+        assertEq(price, 0);
+        assertEq(lastUpdated, 0);
+
+        // Set price
+        vm.prank(owner);
+        core.updatePenguPrice(INITIAL_PRICE);
+        
+        (price, lastUpdated) = core.getLastOraclePrice();
+        assertEq(price, INITIAL_PRICE);
+        assertEq(lastUpdated, block.timestamp);
+    }
+
+    function testGetAllActiveLotsEmpty() public {
+        (uint256[] memory lotIds, StrategyCore.Lot[] memory lots) = core.getAllActiveLots();
+        assertEq(lotIds.length, 0);
+        assertEq(lots.length, 0);
+    }
+
+    function testGetAllActiveLots() public {
+        _setupMultipleLots(); // Creates 3 lots
+        
+        (uint256[] memory lotIds, StrategyCore.Lot[] memory lots) = core.getAllActiveLots();
+        
+        // Should return 3 active lots
+        assertEq(lotIds.length, 3);
+        assertEq(lots.length, 3);
+        
+        // Check lot IDs are sequential
+        assertEq(lotIds[0], 0);
+        assertEq(lotIds[1], 1); 
+        assertEq(lotIds[2], 2);
+        
+        // Check lot data
+        assertEq(lots[0].amountPengu, TEST_DEPOSIT_AMOUNT);
+        assertTrue(lots[0].active);
+        assertEq(lots[1].amountPengu, TEST_DEPOSIT_AMOUNT);
+        assertTrue(lots[1].active);
+        assertEq(lots[2].amountPengu, TEST_DEPOSIT_AMOUNT);
+        assertTrue(lots[2].active);
+    }
+
+    function testGetAllActiveLotsAfterDeactivation() public {
+        _setupMultipleLots(); // Creates 3 lots
+        
+        // Deactivate lot 1
+        vm.prank(owner);
+        core.emergencyDeactivateLot(1);
+        
+        (uint256[] memory lotIds, StrategyCore.Lot[] memory lots) = core.getAllActiveLots();
+        
+        // Should return 2 active lots (0 and 2)
+        assertEq(lotIds.length, 2);
+        assertEq(lots.length, 2);
+        assertEq(lotIds[0], 0);
+        assertEq(lotIds[1], 2);
+    }
+
     // ==================== ERROR CONDITION TESTS ====================
 
     function testSwapFailure() public {
