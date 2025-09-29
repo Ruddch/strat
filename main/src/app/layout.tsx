@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Oswald, Martian_Mono } from "next/font/google";
 import NextAbstractWalletProvider from "@/components/NextAbstractWalletProvider";
 import { Navigation } from "@/components/Navigation";
 import "./globals.css";
@@ -13,6 +13,18 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const oswald = Oswald({
+  variable: "--font-oswald",
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600", "700"],
+});
+
+const martianMono = Martian_Mono({
+  variable: "--font-martian-mono",
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -39,6 +51,12 @@ const roobert = localFont({
   variable: "--font-roobert",
 });
 
+const randomGrotesque = localFont({
+  src: "../fonts/Random Grotesque Spacious.ttf",
+  variable: "--font-random-grotesque",
+  weight: "400",
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -48,10 +66,16 @@ export default function RootLayout({
     <html lang="en">
       <NextAbstractWalletProvider>
         <body
-          className={`${geistSans.variable} ${geistMono.variable} ${avenueMono.variable} ${roobert.variable} antialiased`}
+          className={`${geistSans.variable} ${geistMono.variable} ${avenueMono.variable} ${roobert.variable} ${oswald.variable} ${martianMono.variable} ${randomGrotesque.variable} antialiased`}
         >
           <Navigation />
           {children}
+          {/* Right Navigation - Empty */}
+          <nav className="fixed top-0 right-0 bottom-0 w-64 z-50 pr-10">
+            <div className="flex flex-col h-full p-2 pt-11 pb-11 border-l border-r border-[var(--color-border-accent)]">
+              {/* Empty content */}
+            </div>
+          </nav>
         </body>
       </NextAbstractWalletProvider>
     </html>

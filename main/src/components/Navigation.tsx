@@ -10,46 +10,75 @@ export function Navigation() {
   const { address } = useAccount();
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-sm border-b border-white/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex space-x-8">
-            <Link
-              href="/"
-              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                pathname === "/"
-                  ? "text-white bg-white/10"
-                  : "text-gray-300 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              Home
-            </Link>
-            <Link
-              href="/claim"
-              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                pathname === "/claim"
-                  ? "text-white bg-white/10"
-                  : "text-gray-300 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              Claim
-            </Link>
-          </div>
+    <nav className="fixed top-0 left-0 bottom-0 w-64 z-50 pl-10">
+      <div className="flex flex-col h-full p-2 pt-11 pb-11 border-l border-r border-[var(--color-border-accent)]">
+        {/* Logo/Brand */}
+        <div className="mb-8">
+          <h1 className="text-[20px] w-41 font-light leading-[150%] tracking-[0%] text-[var(--color-text-accent)] font-[family-name:var(--font-martian-mono)]">
+            PENGU<br/>STRATEGY
+          </h1>
           
-          <div className="flex items-center">
-            {address ? (
-              <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <p className="text-sm text-white font-[family-name:var(--font-roobert)]">
-                    {address.slice(0, 6)}...{address.slice(-4)}
-                  </p>
-                </div>
-                <SignInButton />
-              </div>
-            ) : (
-              <SignInButton />
-            )}
+          {/* Navigation Links */}
+          <div className="mt-6 space-y-8">
+            <a 
+              href="#live" 
+              className="block text-[14px] font-light leading-[150%] tracking-[0%] text-[var(--color-text-accent)] font-[family-name:var(--font-martian-mono)] hover:opacity-80 transition-opacity"
+            >
+              Live
+            </a>
+            <a 
+              href="#take-profit" 
+              className="block text-[14px] font-light leading-[150%] tracking-[0%] text-white font-[family-name:var(--font-martian-mono)] hover:opacity-80 transition-opacity"
+            >
+              Take Profit
+            </a>
+            <a 
+              href="#treasury" 
+              className="block text-[14px] font-light leading-[150%] tracking-[0%] text-white font-[family-name:var(--font-martian-mono)] hover:opacity-80 transition-opacity"
+            >
+              Treasury
+            </a>
           </div>
+        </div>
+
+        {/* Navigation Links */}
+        <div className="flex flex-col space-y-8 flex-1">
+          <Link
+            href="/"
+            className={`block text-[14px] font-light leading-[150%] tracking-[0%] font-[family-name:var(--font-martian-mono)] hover:opacity-80 transition-opacity ${
+              pathname === "/"
+                ? "text-[var(--color-text-accent)]"
+                : "text-white"
+            }`}
+          >
+            Home
+          </Link>
+          <Link
+            href="/claim"
+            className={`block text-[14px] font-light leading-[150%] tracking-[0%] font-[family-name:var(--font-martian-mono)] hover:opacity-80 transition-opacity ${
+              pathname === "/claim"
+                ? "text-[var(--color-text-accent)]"
+                : "text-white"
+            }`}
+          >
+            Claim
+          </Link>
+        </div>
+        
+        {/* Wallet Section */}
+        <div className="mt-auto">
+          {address ? (
+            <div className="flex flex-col gap-3">
+              <div className="text-left">
+                <p className="text-sm text-white font-[family-name:var(--font-roobert)]">
+                  {address.slice(0, 6)}...{address.slice(-4)}
+                </p>
+              </div>
+              <SignInButton />
+            </div>
+          ) : (
+            <SignInButton />
+          )}
         </div>
       </div>
     </nav>
