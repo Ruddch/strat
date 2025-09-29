@@ -433,7 +433,7 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
     ) {
         ethReceived = address(this).balance - ethBalanceBefore;
         
-        // Send ETH to BuybackManager через правильную функцию
+        // Send ETH to BuybackManager
         if (ethReceived > 0) {
             try IBuybackManager(buybackManager).receiveFromStrategy{value: ethReceived}(tx.origin) {
                 // Success - ETH transferred to BuybackManager

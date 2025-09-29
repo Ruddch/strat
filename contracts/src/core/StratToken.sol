@@ -138,8 +138,14 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
 
     // ====== Core transfer with fees ======
     function _update(address from, address to, uint256 amount) internal override {
-        // owner can always move pre-launch
-        if (!tradingEnabled && from != owner() && to != owner()) {
+        // Cache state variables to save gas
+        bool _tradingEnabled = tradingEnabled;
+        bool _swapEnabled = swapEnabled;
+        bool _inSwap = inSwap;
+        uint16 _totalFeeBps = totalFeeBps;
+        
+        // Owner can always move pre-launch
+        if (!_tradingEnabled && from != owner() && to != owner()) {
             revert TradingDisabled();
         }
 
@@ -149,14 +155,18 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         // Apply anti-whale limits first
         _enforceTransactionLimits(from, to, amount, marketFrom, marketTo);
 
+        // Cache fee exemption status
+        bool fromExempt = feeExempt[from];
+        bool toExempt = feeExempt[to];
+
         // Determine if fee should be taken
-        bool shouldTakeFee = tradingEnabled
-            && !feeExempt[from]
-            && !feeExempt[to]
+        bool shouldTakeFee = _tradingEnabled
+            && !fromExempt
+            && !toExempt
             && (marketFrom || marketTo);
 
-        // Execute swap-back on sells (simple and reliable)
-        if (swapEnabled && !inSwap && marketTo && from != address(this)) {
+        // Execute swap-back on sells
+        if (_swapEnabled && !_inSwap && marketTo && from != address(this)) {
             _swapBack();
         }
 
@@ -166,18 +176,17 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
             return;
         }
 
-        uint256 feeAmount = (amount * totalFeeBps) / BPS_DENOM;
+        uint256 feeAmount = (amount * _totalFeeBps) / BPS_DENOM;
         uint256 transferAmount = amount - feeAmount;
 
         // Transfer net amount to recipient
         super._update(from, to, transferAmount);
-        
         super._update(from, address(this), feeAmount);
 
         emit FeeTaken(feeAmount, from);
 
-        // swap feeAmount tokens
-        if (!inSwap) {
+        // Try immediate swap of collected fees
+        if (!_inSwap) {
             _tryImmediateSwap(feeAmount);
         }
     }

@@ -9,9 +9,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title Treasury Contract for Weighted Dividend Distribution (off-chain snapshots)
- * @dev Off-chain: backend сам собирает balances за каждый день (или любой иной период, как решишь),
- * рассчитывает weighted_balance и claimAmount, строит Merkle root и proof. Контракт лишь управляет выпусками,
- * хранит Merkle root/costraints, авторизацию, ролловер и раздаёт клеймы при валидации proof.
+ * @dev
  */
 contract Treasury is Ownable, Pausable, ReentrancyGuard {
     IERC20 public immutable PENGU;
@@ -265,8 +263,8 @@ contract Treasury is Ownable, Pausable, ReentrancyGuard {
      * @dev Emergency withdraw (only unclaimed expired tokens)
      */
     function emergencyWithdraw(uint256 epochId, uint256 amount) 
-        external 
-        onlyOwner 
+        external
+        onlyOwner
         validEpoch(epochId) 
     {
         require(!epochs[epochId].isClaimable, "Epoch still claimable");
