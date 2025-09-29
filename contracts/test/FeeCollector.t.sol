@@ -203,17 +203,18 @@ contract FeeCollectorTest is Test {
             (penguAmount * 7000) / 10000, 
             (penguAmount * 3000) / 10000
         );
-        
+
         vm.prank(alice);
-        feeCollector.processFees(penguAmount);
-        
+
+        feeCollector.processFeesWithSlippage(1000); // 10% slippage
+
         // Check ETH was used
         assertEq(address(feeCollector).balance, ethBefore - expectedEthUsed);
-        
+
         // Check PENGU distribution
         assertEq(pengu.balanceOf(address(strategyCore)), (penguAmount * 7000) / 10000);
         assertEq(pengu.balanceOf(address(treasury)), (penguAmount * 3000) / 10000);
-        
+
         // Check deposit calls
         assertEq(strategyCore.lastAmountPengu(), (penguAmount * 7000) / 10000);
         assertEq(treasury.lastAmount(), (penguAmount * 3000) / 10000);
@@ -241,28 +242,51 @@ contract FeeCollectorTest is Test {
     function testInsufficientBalance() public {
         // Set balance below threshold
         vm.deal(address(feeCollector), 0.5 ether);
-        
         vm.prank(alice);
         vm.expectRevert(FeeCollector.InsufficientBalance.selector);
-        feeCollector.processFees(1000e18);
+
+        feeCollector.processFeesWithSlippage(1000); // 10% slippage
     }
 
     function testSwapFailure() public {
         router.setSwapResult(1000e18, true); // Set to revert
-        
         vm.prank(alice);
         vm.expectRevert(FeeCollector.SwapFailed.selector);
-        feeCollector.processFees(1000e18);
+
+        feeCollector.processFeesWithSlippage(1000); // 10% slippage
     }
 
     function testInsufficientTokensReceived() public {
-        uint256 penguAmount = 500e18;
-        uint256 minTokens = 1000e18;
-        router.setSwapResult(penguAmount, false);
-        
+        // Настроили ожидания выше
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = feeCollector.useAmount();
+        amounts[1] = 1000e18;
+        router.setAmountsOut(amounts);
+        router.setSwapResult(500e18, false);
+
         vm.prank(alice);
         vm.expectRevert(FeeCollector.InsufficientTokensReceived.selector);
-        feeCollector.processFees(minTokens);
+        // делаем слепидж маленьким, чтобы minTokensOut был близко к 1000e18
+        feeCollector.processFeesWithSlippage(0); // slippage 0%
+    }
+
+    function testSlippageTooHigh() public {
+    vm.prank(alice);
+    vm.expectRevert(FeeCollector.SlippageTooHigh.selector);
+    // ✅ Проверяем новое ограничение
+    feeCollector.processFeesWithSlippage(2000); // 20% > 15% максимума
+    }
+
+    function testSlippageLimit() public {
+        uint256 penguAmount = 1000e18;
+        router.setSwapResult(penguAmount, false);
+        vm.prank(alice);
+        // ✅ 15% должно работать
+        feeCollector.processFeesWithSlippage(1500);
+        
+        // ✅ 15.01% должно фейлиться  
+        vm.expectRevert(FeeCollector.SlippageTooHigh.selector);
+        feeCollector.processFeesWithSlippage(1501);
     }
 
     function testSetThreshold() public {
@@ -287,15 +311,6 @@ contract FeeCollectorTest is Test {
         feeCollector.setUseAmount(newAmount);
         
         assertEq(feeCollector.useAmount(), newAmount);
-    }
-
-    function testSetGasReserve() public {
-        uint256 newReserve = 0.1 ether;
-        
-        vm.prank(owner);
-        feeCollector.setGasReserve(newReserve);
-        
-        assertEq(feeCollector.gasReserve(), newReserve);
     }
 
     function testSetRouter() public {
@@ -357,7 +372,6 @@ contract FeeCollectorTest is Test {
         (
             uint256 _threshold,
             uint256 _useAmount,
-            uint256 _gasReserve,
             address _penguAddress,
             address _router,
             address _strategyCore,
@@ -366,7 +380,6 @@ contract FeeCollectorTest is Test {
         
         assertEq(_threshold, feeCollector.threshold());
         assertEq(_useAmount, feeCollector.useAmount());
-        assertEq(_gasReserve, feeCollector.gasReserve());
         assertEq(_penguAddress, address(pengu));
         assertEq(_router, address(router));
         assertEq(_strategyCore, address(strategyCore));

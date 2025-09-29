@@ -45,7 +45,6 @@ contract FeeCollector is Ownable, ReentrancyGuard {
     error InsufficientBalance();
     error InvalidThreshold();
     error InvalidUseAmount();
-    error InvalidGasReserve();
     error InvalidAddress();
     error InvalidDistributionRatio();
     error SwapFailed();
@@ -53,6 +52,7 @@ contract FeeCollector is Ownable, ReentrancyGuard {
     error TransferFailed();
     error InvalidDeadline();
     error ZeroAmount();
+    error SlippageTooHigh();
 
     // ============ EVENTS ============
     event ETHReceived(address indexed from, uint256 amount);
@@ -64,7 +64,6 @@ contract FeeCollector is Ownable, ReentrancyGuard {
     );
     event ThresholdUpdated(uint256 oldThreshold, uint256 newThreshold);
     event UseAmountUpdated(uint256 oldAmount, uint256 newAmount);
-    event GasReserveUpdated(uint256 oldReserve, uint256 newReserve);
     event RouterUpdated(address indexed oldRouter, address indexed newRouter);
     event StrategyUpdated(address indexed oldStrategy, address indexed newStrategy);
     event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury);
@@ -81,7 +80,6 @@ contract FeeCollector is Ownable, ReentrancyGuard {
     // Configuration parameters
     uint256 public threshold = 1 ether;           // Minimum ETH to trigger processFees
     uint256 public useAmount = 0.9 ether;         // Amount to use per process
-    uint256 public gasReserve = 0.05 ether;       // Safety reserve for gas
     
     // Distribution ratios (basis points)
     uint256 public constant STRATEGY_RATIO = 7000;    // 70%
@@ -144,65 +142,32 @@ contract FeeCollector is Ownable, ReentrancyGuard {
     // ============ MAIN FUNCTIONS ============
     
     /**
-     * @dev Process accumulated fees by buying PENGU and distributing
-     * @param minTokensOut Minimum PENGU tokens expected (slippage protection)
-     * @notice Anyone can call this function when threshold is met
-     */
-    function processFees(uint256 minTokensOut) external nonReentrant {
-        uint256 currentBalance = address(this).balance;
-        
-        // Check if we have enough ETH to process
-        if (currentBalance < threshold) {
-            revert InsufficientBalance();
-        }
-        
-        // Calculate amount to use for swap
-        uint256 availableAmount = currentBalance - gasReserve;
-        uint256 ethToUse = useAmount > availableAmount ? availableAmount : useAmount;
-        
-        if (ethToUse == 0) {
-            revert ZeroAmount();
-        }
-        
-        // Execute the swap
-        uint256 penguReceived = _swapETHForPengu(ethToUse, minTokensOut);
-        
-        // Distribute PENGU tokens
-        _distributePengu(penguReceived, ethToUse);
-        
-        emit FeeProcessed(ethToUse, penguReceived, 
-            (penguReceived * STRATEGY_RATIO) / BPS_DENOM,
-            (penguReceived * TREASURY_RATIO) / BPS_DENOM
-        );
-    }
-    
-    /**
      * @dev Process fees with automatic slippage calculation
      * @param slippageBps Slippage tolerance in basis points (e.g., 300 = 3%)
      */
-    function processFeesWithSlippage(uint256 slippageBps) external nonReentrant {
-        uint256 currentBalance = address(this).balance;
+        function processFeesWithSlippage(uint256 slippageBps) external nonReentrant {
+
+        if (slippageBps > 1500) revert SlippageTooHigh();
         
+        uint256 currentBalance = address(this).balance;
         if (currentBalance < threshold) {
             revert InsufficientBalance();
         }
-        
-        uint256 availableAmount = currentBalance - gasReserve;
-        uint256 ethToUse = useAmount > availableAmount ? availableAmount : useAmount;
-        
+
+        uint256 ethToUse = useAmount > currentBalance ? currentBalance : useAmount;
         if (ethToUse == 0) {
             revert ZeroAmount();
         }
-        
+
         // Calculate minimum tokens out based on current price and slippage
         uint256 minTokensOut = _calculateMinTokensOut(ethToUse, slippageBps);
-        
+
         // Execute the swap
         uint256 penguReceived = _swapETHForPengu(ethToUse, minTokensOut);
-        
+
         // Distribute PENGU tokens
         _distributePengu(penguReceived, ethToUse);
-        
+
         emit FeeProcessed(ethToUse, penguReceived,
             (penguReceived * STRATEGY_RATIO) / BPS_DENOM,
             (penguReceived * TREASURY_RATIO) / BPS_DENOM
@@ -342,17 +307,6 @@ contract FeeCollector is Ownable, ReentrancyGuard {
     }
     
     /**
-     * @dev Set gas reserve amount
-     * @param _gasReserve New gas reserve in wei
-     */
-    function setGasReserve(uint256 _gasReserve) external onlyOwner {
-        uint256 oldReserve = gasReserve;
-        gasReserve = _gasReserve;
-        
-        emit GasReserveUpdated(oldReserve, _gasReserve);
-    }
-    
-    /**
      * @dev Update Uniswap router address
      * @param _router New router address
      */
@@ -453,8 +407,7 @@ contract FeeCollector is Ownable, ReentrancyGuard {
         canProcessNow = currentBalance >= threshold;
         
         if (canProcessNow) {
-            uint256 afterReserve = currentBalance - gasReserve;
-            availableAmount = useAmount > afterReserve ? afterReserve : useAmount;
+            availableAmount = useAmount > currentBalance ? currentBalance : useAmount;
         }
     }
     
@@ -462,7 +415,6 @@ contract FeeCollector is Ownable, ReentrancyGuard {
      * @dev Get current contract configuration
      * @return _threshold Current threshold value
      * @return _useAmount Current use amount
-     * @return _gasReserve Current gas reserve
      * @return _penguAddress PENGU token address
      * @return _router Router address
      * @return _strategyCore StrategyCore address  
@@ -471,7 +423,6 @@ contract FeeCollector is Ownable, ReentrancyGuard {
     function getConfig() external view returns (
         uint256 _threshold,
         uint256 _useAmount,
-        uint256 _gasReserve,
         address _penguAddress,
         address _router,
         address _strategyCore,
@@ -480,7 +431,6 @@ contract FeeCollector is Ownable, ReentrancyGuard {
         return (
             threshold,
             useAmount,
-            gasReserve,
             penguAddress,
             address(router),
             address(strategyCore),
