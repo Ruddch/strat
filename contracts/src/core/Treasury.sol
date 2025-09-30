@@ -24,6 +24,8 @@ contract Treasury is Ownable, Pausable, ReentrancyGuard {
         bytes32 merkleRoot;
         bool isFinalized;
         bool isClaimable;
+        bool rolloverProcessed;
+        bool receivedRollover;
     }
 
     struct UserClaimInfo {
@@ -64,8 +66,8 @@ contract Treasury is Ownable, Pausable, ReentrancyGuard {
             _endCurrentEpoch();
         }
         uint256 rollover = 0;
-        if (currentEpoch > 1) {
-            rollover = _processRollover(currentEpoch - 1);
+        if (currentEpoch > 2) {
+            rollover = _processRollover(currentEpoch - 2);
         }
         currentEpoch++;
         EpochInfo storage newEpoch = epochs[currentEpoch];
@@ -79,13 +81,13 @@ contract Treasury is Ownable, Pausable, ReentrancyGuard {
         require(currentEpoch > 0, "No active epoch");
         EpochInfo storage epoch = epochs[currentEpoch];
         epoch.endTime = block.timestamp;
-
         if (currentEpoch > 1) {
             EpochInfo storage prev = epochs[currentEpoch - 1];
             if (prev.isFinalized) prev.isClaimable = true;
         }
-        if (currentEpoch > 2) epochs[currentEpoch - 2].isClaimable = false;
-
+        
+        // ✅ ИСПРАВЛЕНО: Делаем не claimable эпоху, из которой УЖЕ взят rollover
+        if (currentEpoch > 3) epochs[currentEpoch - 3].isClaimable = false; // БЫЛО: currentEpoch - 2
         emit EpochEnded(currentEpoch, block.timestamp, epoch.totalDividends);
     }
 
@@ -122,12 +124,22 @@ contract Treasury is Ownable, Pausable, ReentrancyGuard {
         emit DividendsAdded(epochId, amount);
     }
 
+    function depositPengu(uint256 amount) external onlyAuthorized whenNotPaused {
+        require(currentEpoch > 0, "No active epoch");
+        require(epochs[currentEpoch].endTime == 0, "Epoch already ended");
+        require(amount > 0, "Amount must be positive");
+
+        // Токены уже были отправлены на контракт, просто учитываем их для текущей эпохи
+        epochs[currentEpoch].totalDividends += amount;
+        emit DividendsAdded(currentEpoch, amount);
+    }
+
     // ============ CLAIM SYSTEM ============
 
     function claimDividends(
         uint256 epochId,
-        uint256 weightedBalance, // off-chain
-        uint256 claimAmount,     // off-chain
+        uint256 weightedBalance,
+        uint256 claimAmount,
         bytes32[] calldata merkleProof
     ) external nonReentrant whenNotPaused validEpoch(epochId) {
         EpochInfo storage epoch = epochs[epochId];
@@ -135,15 +147,14 @@ contract Treasury is Ownable, Pausable, ReentrancyGuard {
         require(epochId == currentEpoch - 1, "Only previous epoch can be claimed");
         require(!userClaims[epochId][msg.sender].hasClaimed, "Already claimed");
         require(claimAmount > 0, "Nothing to claim");
-
+        
+        require(PENGU.balanceOf(address(this)) >= claimAmount, "Insufficient contract balance");
+        
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender, weightedBalance, claimAmount));
         require(MerkleProof.verify(merkleProof, epoch.merkleRoot, leaf), "Invalid Merkle proof");
-
         userClaims[epochId][msg.sender] = UserClaimInfo(weightedBalance, claimAmount, true);
         epoch.claimedAmount += claimAmount;
-
         require(PENGU.transfer(msg.sender, claimAmount), "Token transfer failed");
-
         emit DividendsClaimed(epochId, msg.sender, claimAmount);
     }
 
@@ -151,21 +162,19 @@ contract Treasury is Ownable, Pausable, ReentrancyGuard {
 
     function _processRollover(uint256 expiredEpochId) internal returns (uint256 rolledOverAmount) {
         EpochInfo storage expiredEpoch = epochs[expiredEpochId];
+        
+        if (expiredEpoch.rolloverProcessed) return 0;
+        
         rolledOverAmount = expiredEpoch.totalDividends - expiredEpoch.claimedAmount;
+        
+        expiredEpoch.rolloverProcessed = true;
+        
+        epochs[currentEpoch + 1].receivedRollover = true;
+        
         if (rolledOverAmount > 0) {
             emit TokensRolledOver(expiredEpochId, currentEpoch + 1, rolledOverAmount);
         }
         return rolledOverAmount;
-    }
-
-    function forceRollover(uint256 expiredEpochId, uint256 targetEpochId)
-        external onlyOwner validEpoch(expiredEpochId) validEpoch(targetEpochId)
-    {
-        require(targetEpochId > expiredEpochId, "Invalid target epoch");
-        require(!epochs[expiredEpochId].isClaimable, "Epoch still claimable");
-        uint256 rolledOverAmount = epochs[expiredEpochId].totalDividends - epochs[expiredEpochId].claimedAmount;
-        epochs[targetEpochId].totalDividends += rolledOverAmount;
-        emit TokensRolledOver(expiredEpochId, targetEpochId, rolledOverAmount);
     }
 
     // ============ VIEW FUNCTIONS ============
@@ -174,17 +183,15 @@ contract Treasury is Ownable, Pausable, ReentrancyGuard {
         external view validEpoch(epochId)
         returns (
             uint256 startTime, uint256 endTime, uint256 totalDividends,
-            uint256 claimedAmount, bool isFinalized, bool isClaimable
+            uint256 claimedAmount, bool isFinalized, bool isClaimable,
+            bool rolloverProcessed, bool receivedRollover
         )
     {
         EpochInfo storage epoch = epochs[epochId];
         return (
-            epoch.startTime,
-            epoch.endTime,
-            epoch.totalDividends,
-            epoch.claimedAmount,
-            epoch.isFinalized,
-            epoch.isClaimable
+            epoch.startTime, epoch.endTime, epoch.totalDividends,
+            epoch.claimedAmount, epoch.isFinalized, epoch.isClaimable,
+            epoch.rolloverProcessed, epoch.receivedRollover
         );
     }
 
@@ -274,14 +281,31 @@ contract Treasury is Ownable, Pausable, ReentrancyGuard {
         require(PENGU.transfer(owner(), amount), "Token transfer failed");
     }
 
+    function forceRollover(uint256 expiredEpochId, uint256 targetEpochId)
+        external onlyOwner validEpoch(expiredEpochId) validEpoch(targetEpochId)
+    {
+        require(targetEpochId > expiredEpochId, "Invalid target epoch");
+        require(!epochs[expiredEpochId].isClaimable, "Epoch still claimable");
+        
+        require(!epochs[expiredEpochId].rolloverProcessed, "Rollover already processed");
+        uint256 rolledOverAmount = epochs[expiredEpochId].totalDividends - epochs[expiredEpochId].claimedAmount;
+        epochs[targetEpochId].totalDividends += rolledOverAmount;
+        
+        epochs[expiredEpochId].rolloverProcessed = true;
+        emit TokensRolledOver(expiredEpochId, targetEpochId, rolledOverAmount);
+    }
+
     /**
      * @dev Get total unclaimed amount from expired epochs
      */
     function getTotalUnclaimedExpired() external view returns (uint256 total) {
         for (uint256 i = 1; i <= currentEpoch; i++) {
-            if (!epochs[i].isClaimable && epochs[i].endTime > 0) {
-                total += epochs[i].totalDividends - epochs[i].claimedAmount;
-            }
+            EpochInfo storage epoch = epochs[i];
+            
+            if (epoch.endTime == 0 || epoch.isClaimable || 
+                epoch.rolloverProcessed || epoch.receivedRollover) continue;
+            
+            total += epoch.totalDividends - epoch.claimedAmount;
         }
         return total;
     }

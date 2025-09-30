@@ -183,50 +183,39 @@ contract BuybackManager is Ownable, Pausable, ReentrancyGuard {
     function _executeBuyback(address caller) internal {
         uint256 ethToUse = pendingETH;
         if (ethToUse < buybackThreshold) return;
-        
-        // Calculate caller reward
+
         uint256 callerReward = (ethToUse * callerRewardBps) / BPS_DENOMINATOR;
         uint256 ethForBuyback = ethToUse - callerReward;
-        
-        // Reset pending ETH
-        pendingETH = 0;
-        
+
         try this._performSwapAndBurn(ethForBuyback) returns (uint256 stratBurned) {
-            // Success - update stats and pay reward
+            // Reset pending ETH only after successful swap
+            pendingETH = 0;
+            
             totalETHUsedForBuyback += ethForBuyback;
             totalSTRATBurned += stratBurned;
             totalBuybacks++;
             totalCallerRewards += callerReward;
-            
-            // Pay caller reward
+
             if (callerReward > 0 && caller != address(0)) {
                 (bool success, ) = payable(caller).call{value: callerReward}("");
                 if (!success) {
-                    // If reward payment fails, add it back to pending
                     pendingETH += callerReward;
                     callerReward = 0;
                 }
             }
-            
+
             emit BuybackExecuted(
                 caller,
                 ethForBuyback,
-                stratBurned, // We use burned amount as received for simplicity
+                stratBurned,
                 stratBurned,
                 callerReward,
                 block.timestamp
             );
-            
+
         } catch Error(string memory reason) {
-            // Swap failed - restore pending ETH
-            pendingETH = ethToUse;
-            
             emit BuybackFailed(reason, ethForBuyback, caller, block.timestamp);
-            
         } catch {
-            // Unknown error - restore pending ETH
-            pendingETH = ethToUse;
-            
             emit BuybackFailed("Unknown error", ethForBuyback, caller, block.timestamp);
         }
     }

@@ -152,8 +152,8 @@ contract TreasuryTest is Test {
         
         assertEq(treasury.currentEpoch(), 1);
         
-        (uint256 startTime, uint256 endTime, uint256 totalDividends, 
-         uint256 claimedAmount, bool isFinalized, bool isClaimable) = treasury.getEpochInfo(1);
+        (uint256 startTime, uint256 endTime, uint256 totalDividends,
+        uint256 claimedAmount, bool isFinalized, bool isClaimable,,) = treasury.getEpochInfo(1);
         
         assertGt(startTime, 0);
         assertEq(endTime, 0); // Not ended yet
@@ -183,12 +183,12 @@ contract TreasuryTest is Test {
         assertEq(treasury.currentEpoch(), 2);
         
         // Check that epoch 1 ended
-        (uint256 startTime1, uint256 endTime1, uint256 totalDividends1,,,) = treasury.getEpochInfo(1);
+        (uint256 startTime1, uint256 endTime1, uint256 totalDividends1,,,,,) = treasury.getEpochInfo(1);
         assertGt(endTime1, 0);
         assertEq(totalDividends1, 1000e18);
         
         // Check that epoch 2 started
-        (uint256 startTime2, uint256 endTime2, uint256 totalDividends2,,,) = treasury.getEpochInfo(2);
+        (uint256 startTime2, uint256 endTime2, uint256 totalDividends2,,,,,) = treasury.getEpochInfo(2);
         assertGt(startTime2, 0);
         assertEq(endTime2, 0);
         assertEq(totalDividends2, 0); // No rollover yet since epoch 1 not expired
@@ -210,7 +210,7 @@ contract TreasuryTest is Test {
         
         treasury.finalizeEpoch(1, merkleRoot, 1000e18);
         
-        (,,,, bool isFinalized, bool isClaimable) = treasury.getEpochInfo(1);
+        (,,,, bool isFinalized, bool isClaimable,,) = treasury.getEpochInfo(1);
         assertTrue(isFinalized);
         assertTrue(isClaimable); // Should be claimable as it's the previous epoch
     }
@@ -263,7 +263,7 @@ contract TreasuryTest is Test {
         vm.prank(feeCollector);
         treasury.addDividends(dividendAmount);
         
-        (,, uint256 totalDividends,,,) = treasury.getEpochInfo(1);
+        (,, uint256 totalDividends,,,,,) = treasury.getEpochInfo(1);
         assertEq(totalDividends, dividendAmount);
     }
     
@@ -276,7 +276,7 @@ contract TreasuryTest is Test {
         vm.prank(feeCollector);
         treasury.addDividends(200e18);
         
-        (,, uint256 totalDividends,,,) = treasury.getEpochInfo(1);
+        (,, uint256 totalDividends,,,,,) = treasury.getEpochInfo(1);
         assertEq(totalDividends, 300e18);
     }
     
@@ -310,7 +310,7 @@ contract TreasuryTest is Test {
         treasury.startNewEpoch();
         treasury.emergencyAddDividends(1, 100e18);
         
-        (,, uint256 totalDividends,,,) = treasury.getEpochInfo(1);
+        (,, uint256 totalDividends,,,,,) = treasury.getEpochInfo(1);
         assertEq(totalDividends, 100e18);
     }
     
@@ -451,37 +451,33 @@ contract TreasuryTest is Test {
     // ============ ROLLOVER TESTS ============
     
     function testRolloverUnclaimedTokens() public {
-        treasury.startNewEpoch();
+        treasury.startNewEpoch(); // Epoch 1
         vm.prank(feeCollector);
         treasury.addDividends(1000e18);
-        
         treasury.startNewEpoch(); // Epoch 2
-        treasury.finalizeEpoch(1, keccak256("test"), 800e18); // 800 claimable
-        
-        treasury.startNewEpoch(); // Epoch 3 - epoch 1 rollover
-        
-        // Rollover = totalDividends - claimedAmount
-        // 1000 - 0 = 1000
-        (,, uint256 totalDividends3,,,) = treasury.getEpochInfo(3);
-        assertEq(totalDividends3, 1000e18);
+        treasury.finalizeEpoch(1, keccak256("test1"), 800e18);
+        treasury.startNewEpoch(); // Epoch 3
+        treasury.startNewEpoch(); // Epoch 4 - rollover из Epoch 1
+        (,, uint256 epoch4Dividends,,,, bool epoch4RolloverProcessed, bool epoch4ReceivedRollover) = treasury.getEpochInfo(4);
+        assertEq(epoch4Dividends, 1000e18);
+        assertFalse(epoch4RolloverProcessed);
+        assertTrue(epoch4ReceivedRollover);
+
+        (,,,,,, bool epoch1RolloverProcessed, bool epoch1ReceivedRollover) = treasury.getEpochInfo(1);
+        assertTrue(epoch1RolloverProcessed);
+        assertFalse(epoch1ReceivedRollover);
     }
     
     function testForceRollover() public {
         treasury.startNewEpoch(); // Epoch 1
         vm.prank(feeCollector);
         treasury.addDividends(1000e18);
-        
         treasury.startNewEpoch(); // Epoch 2
-        treasury.startNewEpoch(); // Epoch 3 (epoch 1 expired)
+        treasury.startNewEpoch(); // Epoch 3 
         treasury.startNewEpoch(); // Epoch 4
-        
-        vm.expectEmit(true, true, false, false);
-        emit TokensRolledOver(1, 4, 1000e18); // Rollover
-        
+
+        vm.expectRevert("Rollover already processed");
         treasury.forceRollover(1, 4);
-        
-        (,, uint256 totalDividends4,,,) = treasury.getEpochInfo(4);
-        assertEq(totalDividends4, 1000e18);
     }
     
     function testCannotForceRolloverClaimableEpoch() public {
@@ -569,22 +565,38 @@ contract TreasuryTest is Test {
         treasury.startNewEpoch(); // Epoch 1
         vm.prank(feeCollector);
         treasury.addDividends(1000e18);
-        
         treasury.startNewEpoch(); // Epoch 2
         vm.prank(feeCollector);
         treasury.addDividends(500e18);
-        
-        treasury.startNewEpoch(); // Epoch 3 - rollover 1000e18 from epoch 1
-        treasury.startNewEpoch(); // Epoch 4 - rollover 500e18 from epoch 2
-        
-        // Epoch 1: 1000e18 (expired)
-        // Epoch 2: 500e18 (expired) 
-        // Epoch 3: 1000e18
-        // Итого: 1000 + 500 + 1000 = 2500e18
-        
-        assertEq(treasury.getTotalUnclaimedExpired(), 2500e18);
+        treasury.startNewEpoch(); // Epoch 3
+        treasury.startNewEpoch(); // Epoch 4 - rollover Epoch 1
+        treasury.startNewEpoch(); // Epoch 5 - rollover Epoch 2
+
+        assertEq(treasury.getTotalUnclaimedExpired(), 0);
     }
     
+    function testNewRolloverLogic() public {
+        treasury.startNewEpoch(); // Epoch 1
+        vm.prank(feeCollector);
+        treasury.addDividends(1000e18);
+
+        treasury.startNewEpoch(); // Epoch 2
+        vm.prank(feeCollector);
+        treasury.addDividends(500e18);
+
+        treasury.startNewEpoch(); // Epoch 3 - rollover НЕ происходит
+        (,, uint256 epoch3Dividends,,,,,) = treasury.getEpochInfo(3);
+        assertEq(epoch3Dividends, 0); // Нет rollover
+
+        treasury.startNewEpoch(); // Epoch 4 - rollover из epoch 1
+        (,, uint256 epoch4Dividends,,,,,) = treasury.getEpochInfo(4);
+        assertEq(epoch4Dividends, 1000e18); // Rollover из epoch 1
+
+        treasury.startNewEpoch(); // Epoch 5 - rollover из epoch 2
+        (,, uint256 epoch5Dividends,,,,,) = treasury.getEpochInfo(5);
+        assertEq(epoch5Dividends, 500e18); // Rollover из epoch 2
+    }
+
     function testInvalidEpochReverts() public {
         vm.expectRevert("Invalid epoch");
         treasury.getEpochInfo(999);
@@ -739,7 +751,7 @@ contract TreasuryTest is Test {
         assertEq(penguToken.balanceOf(user1), 1000e18 + user1Claim);
         assertTrue(treasury.hasUserClaimed(user1, 1));
         
-        (,,, uint256 claimedAmount,,) = treasury.getEpochInfo(1);
+        (,,, uint256 claimedAmount,,,,) = treasury.getEpochInfo(1);
         assertEq(claimedAmount, user1Claim);
     }
     
@@ -750,7 +762,7 @@ contract TreasuryTest is Test {
         treasury.startNewEpoch();
         treasury.finalizeEpoch(1, keccak256("empty"), 0);
         
-        (,, uint256 totalDividends,,,) = treasury.getEpochInfo(1);
+        (,, uint256 totalDividends,,,,,) = treasury.getEpochInfo(1);
         assertEq(totalDividends, 0);
     }
     
@@ -764,7 +776,7 @@ contract TreasuryTest is Test {
         vm.prank(feeCollector);
         treasury.addDividends(largeAmount);
         
-        (,, uint256 totalDividends,,,) = treasury.getEpochInfo(1);
+        (,, uint256 totalDividends,,,,,) = treasury.getEpochInfo(1);
         assertEq(totalDividends, largeAmount);
     }
     
@@ -773,22 +785,16 @@ contract TreasuryTest is Test {
             treasury.startNewEpoch();
             vm.prank(feeCollector);
             treasury.addDividends(100e18 * i);
-            
+
             assertEq(treasury.currentEpoch(), i);
-            
-            (,, uint256 totalDividends,,,) = treasury.getEpochInfo(i);
-            
-            // Epoch 1: 100e18
-            // Epoch 2: 200e18  
-            // Epoch 3: 300e18 + 100e18 (rollover epoch 1) = 400e18
-            // Epoch 4: 400e18 + 200e18 (rollover epoch 2) = 600e18
-            // Epoch 5: 500e18 + 400e18 (rollover epoch 3) = 900e18
-            
+
+            (,, uint256 totalDividends,,,,,) = treasury.getEpochInfo(i);
+
             uint256 expectedDividends = 100e18 * i;
-            if (i == 3) expectedDividends += 100e18; // rollover epoch 1
-            if (i == 4) expectedDividends += 200e18; // rollover epoch 2  
-            if (i == 5) expectedDividends += 400e18; // rollover epoch 3
             
+            if (i == 4) expectedDividends += 100e18; // rollover из epoch 1 (100e18 - 0)
+            if (i == 5) expectedDividends += 200e18; // rollover из epoch 2 (200e18 - 0)
+
             assertEq(totalDividends, expectedDividends);
         }
     }
@@ -892,18 +898,18 @@ contract TreasuryTest is Test {
         treasury.startNewEpoch(); // Epoch 1
         vm.prank(feeCollector);
         treasury.addDividends(1000e18);
-        
+
         treasury.startNewEpoch(); // Epoch 2  
         vm.prank(feeCollector);
         treasury.addDividends(500e18);
-        
-        treasury.startNewEpoch(); // Epoch 3 - epoch 1 rollover
+
+        treasury.startNewEpoch(); // Epoch 3
         treasury.finalizeEpoch(1, keccak256("test1"), 600e18);
-        
-        treasury.startNewEpoch(); // Epoch 4 - epoch 2 rollover
-        
-        (,, uint256 epoch4Dividends,,,) = treasury.getEpochInfo(4);
-        assertEq(epoch4Dividends, 500e18);
+
+        treasury.startNewEpoch();
+
+        (,, uint256 epoch4Dividends,,,,,) = treasury.getEpochInfo(4);
+        assertEq(epoch4Dividends, 1000e18);
     }
     
     function testMaxEpochsScenario() public {
@@ -919,7 +925,7 @@ contract TreasuryTest is Test {
         assertEq(treasury.currentEpoch(), 100);
         
         // Verify we can still interact with recent epochs
-        (uint256 startTime,,,,,) = treasury.getEpochInfo(100);
+        (uint256 startTime,,,,,,,) = treasury.getEpochInfo(100);
         assertGt(startTime, 0);
     }
     
@@ -955,7 +961,7 @@ contract TreasuryTest is Test {
         assertEq(treasury.currentEpoch(), epochBefore);
         assertEq(treasury.getContractBalance(), balanceBefore);
         
-        (,, uint256 totalDividends,,,) = treasury.getEpochInfo(1);
+        (,, uint256 totalDividends,,,,,) = treasury.getEpochInfo(1);
         assertEq(totalDividends, 1000e18);
     }
 }
