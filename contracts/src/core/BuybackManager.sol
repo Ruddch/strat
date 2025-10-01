@@ -5,19 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-// Uniswap interfaces
-interface IUniswapV2Router02 {
-    function swapExactETHForTokensSupportingFeeOnTransferTokens(
-        uint amountOutMin,
-        address[] calldata path,
-        address to,
-        uint deadline
-    ) external payable;
-    function WETH() external view returns (address);
-    function getAmountsOut(uint amountIn, address[] calldata path)
-        external view returns (uint[] memory amounts);
-}
+import "../interfaces/IUniswapV2Router02.sol";
 
 // Interface for burnable tokens
 interface IBurnableToken is IERC20 {

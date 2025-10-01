@@ -4,18 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-
-interface IUniswapV2Router02 {
-    function factory() external view returns (address);
-    function WETH() external view returns (address);
-    function swapExactTokensForETHSupportingFeeOnTransferTokens(
-        uint amountIn, 
-        uint amountOutMin, 
-        address[] calldata path, 
-        address to, 
-        uint deadline
-    ) external;
-}
+import "../interfaces/IUniswapV2Router02.sol";
 
 interface IUniswapV2Factory {
     function createPair(address tokenA, address tokenB) external returns (address);
@@ -107,8 +96,8 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         WETH = router.WETH();
 
         // Create the V2 pair (token <-> WETH)
-        pair = IUniswapV2Factory(router.factory()).createPair(address(this), WETH);
-        isMarket[pair] = true;
+        pair = address(0); // Will be created after deployment
+        // isMarket[pair] = true; // Will be set when pair is created
 
         // Mint supply to deployer
         _mint(msg.sender, initialSupply);
@@ -192,6 +181,7 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
     }
 
     function _tryImmediateSwap(uint256 amount) private {
+        if (pair == address(0)) return; // No pair yet, skip swap
         if (balanceOf(address(this)) < amount) return;
         
         bool swapSuccess = false;
@@ -290,7 +280,7 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         if (amount > maxTx) revert MaxTxExceeded();
 
         // Check max wallet limit for recipients (except when selling to pair)
-        if (!marketTo) {
+        if (!marketTo && to != address(0)) { // Added to != address(0) check
             uint256 potentialFee = 0;
             bool hasMarketFee = !feeExempt[from] && !feeExempt[to] && (marketFrom || marketTo);
             if (hasMarketFee) { 
@@ -303,6 +293,7 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
 
     // Swap-back
     function _swapBack() private lockTheSwap nonReentrant {
+        if (pair == address(0)) return;
         uint256 tokenBal = balanceOf(address(this));
         if (tokenBal < swapThreshold) return;
 
@@ -334,6 +325,19 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
     }
 
     // ====== Admin Functions ======
+    /**
+     * @notice Create Uniswap V2 pair after deployment
+     * @dev Must be called before enabling trading
+     */
+    function createPair() external onlyOwner {
+        if (pair != address(0)) revert InvalidInput(); // Pair already exists
+        
+        pair = IUniswapV2Factory(router.factory()).createPair(address(this), WETH);
+        isMarket[pair] = true;
+        
+        emit MarketSet(pair, true);
+    }
+
     function enableTrading() external onlyOwner {
         tradingEnabled = true;
         emit TradingEnabled();

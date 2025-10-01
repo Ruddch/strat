@@ -15,3 +15,4 @@ abstractMainnet = { chain = "2741", url = "", key = ""}
 
 [rpc_endpoints]
 abstract = "https://api.mainnet.abs.xyz"
+abstractTestnet = "https://api.testnet.abs.xyz"
