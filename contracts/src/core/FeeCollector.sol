@@ -222,9 +222,9 @@ contract FeeCollector is Ownable, ReentrancyGuard {
         // Calculate distribution amounts
         uint256 toStrategy = (totalAmount * STRATEGY_RATIO) / BPS_DENOM;
         uint256 toTreasury = totalAmount - toStrategy; // Remaining amount
-        
+
         IERC20 pengu = IERC20(penguAddress);
-        
+
         // Send to StrategyCore with eth spent info
         if (toStrategy > 0) {
             try pengu.transfer(address(strategyCore), toStrategy) {
@@ -232,13 +232,13 @@ contract FeeCollector is Ownable, ReentrancyGuard {
                     // Success
                 } catch {
                     // StrategyCore deposit failed but tokens already transferred
-                    // Consider emitting an event for manual intervention
+                    revert("StrategyCore deposit failed");
                 }
             } catch {
                 revert TransferFailed();
             }
         }
-        
+
         // Send to Treasury
         if (toTreasury > 0) {
             try pengu.transfer(address(treasury), toTreasury) {
@@ -246,7 +246,7 @@ contract FeeCollector is Ownable, ReentrancyGuard {
                     // Success
                 } catch {
                     // Treasury deposit failed but tokens already transferred
-                    // Consider emitting an event for manual intervention
+                    revert("Treasury deposit failed");
                 }
             } catch {
                 revert TransferFailed();
