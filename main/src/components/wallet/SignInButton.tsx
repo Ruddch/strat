@@ -4,24 +4,30 @@ import { ConnectKitButton } from "connectkit";
 export function SignInButton() {
   return (
     <ConnectKitButton.Custom>
-      {({ isConnected, isConnecting, show, hide, address, ensName, chain }) => {
+      {({ isConnected, isConnecting, show, address}) => {
         return (
           <button
             onClick={show}
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] hover:text-white hover:cursor-pointer dark:hover:bg-[#e0e0e0] dark:hover:text-black text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 font-[family-name:var(--font-roobert)]"
+            className="w-full py-4 px-2 flex items-center justify-center gap-2.5 transition-colors hover:opacity-80 cursor-pointer font-[family-name:var(--font-martian-mono)] text-sm font-light leading-[150%] tracking-[0%] text-center"
+            style={{
+              backgroundColor: 'rgba(0, 255, 251, 1)',
+              color: 'rgba(1, 27, 35, 1)'
+            }}
           >
             {isConnecting ? (
               <div className="animate-spin w-5 h-5 border-2 border-current border-t-transparent rounded-full" />
             ) : (
               <>
-                <svg
-                  className="w-5 h-5"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                </svg>
-                {isConnected ? "Connected" : "Connect Wallet"}
+                {isConnected ? (
+                  <>
+                    CONNECTED
+                    <span className="text-xs opacity-70">
+                      {address?.slice(0, 6)}...{address?.slice(-4)}
+                    </span>
+                  </>
+                ) : (
+                  "CONNECT WALLET"
+                )}
               </>
             )}
           </button>

@@ -3,6 +3,8 @@ import localFont from "next/font/local";
 import { Geist, Geist_Mono, Oswald, Martian_Mono } from "next/font/google";
 import NextAbstractWalletProvider from "@/components/NextAbstractWalletProvider";
 import { Navigation } from "@/components/Navigation";
+import { RightNavigation } from "@/components/RightNavigation";
+import { ScrollProvider } from "@/contexts/ScrollContext";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -39,18 +41,6 @@ const avenueMono = localFont({
   weight: "100, 900",
 });
 
-const roobert = localFont({
-  src: [
-    { path: "../fonts/Roobert-Light.ttf", weight: "300", style: "normal" },
-    { path: "../fonts/Roobert-Regular.ttf", weight: "400", style: "normal" },
-    { path: "../fonts/Roobert-Medium.ttf", weight: "500", style: "normal" },
-    { path: "../fonts/Roobert-SemiBold.ttf", weight: "600", style: "normal" },
-    { path: "../fonts/Roobert-Bold.ttf", weight: "700", style: "normal" },
-    { path: "../fonts/Roobert-Heavy.ttf", weight: "800", style: "normal" },
-  ],
-  variable: "--font-roobert",
-});
-
 const randomGrotesque = localFont({
   src: "../fonts/Random Grotesque Spacious.ttf",
   variable: "--font-random-grotesque",
@@ -65,18 +55,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <NextAbstractWalletProvider>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} ${avenueMono.variable} ${roobert.variable} ${oswald.variable} ${martianMono.variable} ${randomGrotesque.variable} antialiased`}
-        >
-          <Navigation />
-          {children}
-          {/* Right Navigation - Empty */}
-          <nav className="fixed top-0 right-0 bottom-0 w-64 z-50 pr-10">
-            <div className="flex flex-col h-full p-2 pt-11 pb-11 border-l border-r border-[var(--color-border-accent)]">
-              {/* Empty content */}
-            </div>
-          </nav>
-        </body>
+        <ScrollProvider>
+          <body
+            className={`${geistSans.variable} ${geistMono.variable} ${avenueMono.variable} ${oswald.variable} ${martianMono.variable} ${randomGrotesque.variable} antialiased`}
+          >
+            <Navigation />
+            {children}
+            <RightNavigation />
+          </body>
+        </ScrollProvider>
       </NextAbstractWalletProvider>
     </html>
   );

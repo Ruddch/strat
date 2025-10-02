@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useCallback, useMemo, useState } from 'react';
 
-// Константы для типов отрисовки
 const drawTypes = {
     FILL: 'fill',
     STROKE: 'stroke'
@@ -82,8 +81,8 @@ interface BackgroundEffectsProps {
 export function BackgroundEffects({ 
     message = 'PENGU STRATEGY',
     fontSize = 200,
-    fontColor = [0, 152, 202, 51],
-    density = 3
+    fontColor = [13, 48, 55, 130],
+    density = 1
 }: BackgroundEffectsProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationRef = useRef<number | undefined>(undefined);
@@ -101,6 +100,14 @@ export function BackgroundEffects({
     const widthRef = useRef<number>(0);
     const heightRef = useRef<number>(0);
     const [isMounted, setIsMounted] = useState(false);
+    const isInitializedRef = useRef(false);
+    
+    // Стабильные ссылки на функции для избежания пересоздания
+    const setupRef = useRef<(() => void) | undefined>(undefined);
+    const runRef = useRef<(() => void) | undefined>(undefined);
+    const handleResizeRef = useRef<(() => void) | undefined>(undefined);
+    const handleMouseMoveRef = useRef<((event: MouseEvent) => void) | undefined>(undefined);
+    const handleMouseOutRef = useRef<(() => void) | undefined>(undefined);
 
     const options = useMemo(() => ({
         mouse: {
@@ -129,15 +136,19 @@ export function BackgroundEffects({
     const particleProps = useMemo(() => ['x', 'y', 'vx', 'vy', 'bx', 'by'], []);
 
     const setup = useCallback(() => {
-        if (typeof window === 'undefined' || !canvasRef.current || !bufferRef.current || !ctxRef.current) return;
+        if (typeof window === 'undefined' || !canvasRef.current || !bufferRef.current || !ctxRef.current) {
+            console.log('BackgroundEffects setup failed: missing refs');
+            return;
+        }
 
         const canvas = canvasRef.current;
         const buffer = bufferRef.current;
         const ctx = ctxRef.current;
 
-        // Установка размеров
         const width = window.innerWidth;
         const height = window.innerHeight;
+        
+        console.log('BackgroundEffects setup:', { width, height, message: options.text.message });
         
         canvas.width = width;
         canvas.height = height;
@@ -151,26 +162,20 @@ export function BackgroundEffects({
         centerxRef.current = width * 0.5;
         centeryRef.current = height * 0.5;
 
-        // Очистка буферов
         buffer.clearRect(0, 0, width, height);
         ctx.clearRect(0, 0, width, height);
 
-        // Получаем CSS переменную шрифта
         const oswaldFont = getComputedStyle(document.documentElement)
             .getPropertyValue('--font-oswald')
             .trim();
 
-        // Настройка стилей текста
         buffer.font = `${options.text.fontSize}px ${oswaldFont || "'Oswald'"}, Arial, sans-serif`;
         buffer.textBaseline = textBaselineTypes.MIDDLE;
         buffer.textAlign = textAlignTypes.CENTER;
 
-        // Функция для создания частиц
         const createParticles = () => {
-            // Создание изображения с текстом
             buffer.fillText(options.text.message, centerxRef.current, centeryRef.current);
 
-            // Создание частиц из пикселей текста
             const pixelData = new Uint32Array(buffer.getImageData(0, 0, width, height).data);
             const pixels: number[] = [];
 
@@ -187,19 +192,21 @@ export function BackgroundEffects({
                 }
             }
 
+            console.log('BackgroundEffects particles created:', pixels.length / particleProps.length);
             particlesRef.current = new PropsArray(pixels.length / particleProps.length, particleProps);
             particlesRef.current.set(pixels, 0);
             imageBufferRef.current = buffer.createImageData(width, height);
         };
 
-        // Проверяем, что шрифт загружен
         if (document.fonts) {
             document.fonts.ready.then(createParticles);
         } else {
-            // Fallback для браузеров без Font Loading API
             createParticles();
         }
-    }, [options, particleProps]);
+    }, [options.text.message, options.text.fontSize, options.particles.pixelDensity, particleProps]);
+
+    // Сохраняем функцию в ref
+    setupRef.current = setup;
 
     const update = useCallback(() => {
         if (!particlesRef.current) return;
@@ -217,7 +224,7 @@ export function BackgroundEffects({
             repelxRef.current = lerp(repelxRef.current, centerx, options.mouse.lerpAmt);
             repelyRef.current = lerp(repelyRef.current, centery, options.mouse.lerpAmt);
         }
-    }, [options.mouse.lerpAmt]);
+    }, []);
 
     const updatePixelCoords = useCallback((x: number, y: number, vx: number, vy: number, bx: number, by: number) => {
         const repelx = repelxRef.current;
@@ -237,7 +244,7 @@ export function BackgroundEffects({
         y = lerp(y, y + vy, options.particles.pLerpAmt);
 
         return [x, y, vx, vy];
-    }, [options.mouse.repelThreshold, options.particles.vLerpAmt, options.particles.pLerpAmt]);
+    }, []);
 
     const outOfBounds = useCallback((x: number, y: number, width: number, height: number) => {
         return x < 0 || x >= width || y < 0 || y >= height;
@@ -271,7 +278,7 @@ export function BackgroundEffects({
         });
 
         buffer.putImageData(imageBuffer, 0, 0);
-    }, [options.text.fontColor, outOfBounds, fillPixel, updatePixelCoords]);
+    }, []);
 
     const renderFrame = useCallback(() => {
         if (!ctxRef.current || !bufferRef.current) return;
@@ -298,13 +305,16 @@ export function BackgroundEffects({
         ctx.clearRect(0, 0, widthRef.current, heightRef.current);
         drawParticles();
         renderFrame();
-    }, [drawParticles, renderFrame]);
+    }, []);
 
     const run = useCallback(() => {
         update();
         render();
         animationRef.current = requestAnimationFrame(run);
-    }, [update, render]);
+    }, []);
+
+    // Сохраняем функции в refs
+    runRef.current = run;
 
     const handleMouseMove = useCallback((event: MouseEvent) => {
         hoverRef.current = true;
@@ -318,37 +328,44 @@ export function BackgroundEffects({
 
     const handleResize = useCallback(() => {
         setup();
-    }, [setup]);
+    }, []);
+
+    // Сохраняем обработчики событий в refs
+    handleMouseMoveRef.current = handleMouseMove;
+    handleMouseOutRef.current = handleMouseOut;
+    handleResizeRef.current = handleResize;
 
     useEffect(() => {
-        // Устанавливаем флаг монтирования на клиенте
         setIsMounted(true);
     }, []);
 
     useEffect(() => {
-        // Проверяем, что мы на клиенте и компонент смонтирован
-        if (!isMounted || typeof window === 'undefined' || !canvasRef.current) return;
+        console.log('BackgroundEffects useEffect');
+        if (!isMounted || typeof window === 'undefined') return;
 
-        const canvas = canvasRef.current;
-        bufferRef.current = canvas.getContext('2d')!;
-        ctxRef.current = canvas.getContext('2d')!;
+        if (canvasRef.current && !isInitializedRef.current) {
+            const canvas = canvasRef.current;
+            bufferRef.current = canvas.getContext('2d')!;
+            ctxRef.current = canvas.getContext('2d')!;
 
-        setup();
-        run();
+            setupRef.current?.();
+            isInitializedRef.current = true;
+        }
 
-        window.addEventListener('resize', handleResize);
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseout', handleMouseOut);
+        runRef.current?.();
+        window.addEventListener('resize', handleResizeRef.current!);
+        window.addEventListener('mousemove', handleMouseMoveRef.current!);
+        window.addEventListener('mouseout', handleMouseOutRef.current!);
 
         return () => {
             if (animationRef.current) {
                 cancelAnimationFrame(animationRef.current);
             }
-            window.removeEventListener('resize', handleResize);
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseout', handleMouseOut);
+            window.removeEventListener('resize', handleResizeRef.current!);
+            window.removeEventListener('mousemove', handleMouseMoveRef.current!);
+            window.removeEventListener('mouseout', handleMouseOutRef.current!);
         };
-    }, [isMounted, setup, run, handleResize, handleMouseMove, handleMouseOut]);
+    }, [isMounted]);
 
     return (
         <div
@@ -359,7 +376,6 @@ export function BackgroundEffects({
                 width: '100%',
                 height: '100%',
                 pointerEvents: 'none',
-                zIndex: 1000
             }}
         >
             <canvas
@@ -371,7 +387,7 @@ export function BackgroundEffects({
                     width: '100%',
                     height: '100%',
                     pointerEvents: 'none',
-                    backgroundColor: 'black'
+                    backgroundColor: 'rgba(1, 27, 35, 1)'
                 }}
             />
             <div
@@ -381,7 +397,7 @@ export function BackgroundEffects({
                     left: 0,
                     width: '100%',
                     height: '100%',
-                    backgroundColor: 'rgba(0, 152, 202, 0.2)',
+                    // backgroundColor: 'rgba(0, 152, 202, 0.2)',
                     pointerEvents: 'none'
                 }}
             />
