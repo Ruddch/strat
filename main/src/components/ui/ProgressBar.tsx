@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useState } from 'react';
 
 interface ProgressBarProps {
   percentage: number; // 0-100
@@ -10,22 +10,20 @@ interface ProgressBarProps {
 
 export function ProgressBar({ percentage, className = '', containerRef }: ProgressBarProps) {
   const [animatedPercentage, setAnimatedPercentage] = useState(0);
-  const [totalDashes, setTotalDashes] = useState(210);
+  const [totalDashes, setTotalDashes] = useState(1);
 
-  const calculateDashes = () => {
+  const calculateDashes = useCallback(() => {
     if (containerRef?.current) {
-      console.log('containerRef.current', containerRef.current);
       const containerWidth = containerRef.current.offsetWidth;
-      console.log('containerWidth', containerWidth);
       const dashWidth = 2.5;
       const gap = 5;
       const availableWidth = containerWidth - 15;
       const dashes = Math.floor(availableWidth / (dashWidth + gap));
       setTotalDashes(Math.max(dashes, 50));
     }
-  };
+  }, [containerRef?.current]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     calculateDashes();
     
     const handleResize = () => {
@@ -34,9 +32,9 @@ export function ProgressBar({ percentage, className = '', containerRef }: Progre
     
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [calculateDashes]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const duration = 2000;
     const startTime = Date.now();
     

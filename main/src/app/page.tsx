@@ -84,7 +84,7 @@ export default function Home() {
       {/* First Section - Original Dashboard */}
       <div id="live" ref={containerRef} className="relative grid grid-rows-[1fr_auto] min-h-screen snap-start">
         <BackgroundEffects />
-        <main className="relative flex flex-col justify-between h-full z-10 text-white">
+        <main className="relative flex flex-col justify-between w-full h-full z-10 text-white">
           {/* Top Section - Metrics */}
           <div className="flex justify-between w-full border-b border-[var(--color-border-accent)]">
             <div className="flex-1 text-center pb-7 pt-13 border-r border-[var(--color-border-accent)]">
