@@ -83,7 +83,7 @@ export function BackgroundEffects({
     message = 'PENGU STRATEGY',
     fontSize = 200,
     fontColor = [0, 152, 202, 51],
-    density = 1
+    density = 3
 }: BackgroundEffectsProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationRef = useRef<number | undefined>(undefined);
@@ -358,7 +358,8 @@ export function BackgroundEffects({
                 left: 0,
                 width: '100%',
                 height: '100%',
-                pointerEvents: 'none'
+                pointerEvents: 'none',
+                zIndex: 1000
             }}
         >
             <canvas

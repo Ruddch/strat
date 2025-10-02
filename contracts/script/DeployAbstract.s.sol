@@ -13,15 +13,18 @@ contract DeployAbstractScript is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
-        
+
         console.log("Deploying from:", deployer);
         console.log("Balance:", deployer.balance);
-        
+
         vm.startBroadcast(deployerPrivateKey);
 
-        // Abstract testnet addresses
-        address uniswapRouter = 0x96ff7D9dbf52FdcAe79157d3b249282c7FABd409;
-        
+        // Abstract testnet addresses from official docs
+        address uniswapRouter = 0x96ff7D9dbf52FdcAe79157d3b249282c7FABd409; // UniswapV2Router02
+        address wethAddress = 0x9EDCde0257F2386Ce177C3a7FCdd97787F0D841d; // WETH9
+        console.log("Using UniswapV2Router02:", uniswapRouter);
+        console.log("Using WETH9:", wethAddress);
+
         // 1. Deploy MockPENGU
         MockPengu penguToken = new MockPengu();
         console.log("MockPENGU deployed at:", address(penguToken));
@@ -32,48 +35,49 @@ contract DeployAbstractScript is Script {
 
         // 3. Deploy StratToken FIRST (with placeholders)
         StratToken stratToken = new StratToken(
-            "Strategy Token",         // name
-            "STRAT",                 // symbol
-            1_000_000_000 * 1e18,   // initialSupply
-            payable(deployer),       // opsWallet
-            deployer,                // feeCollector (placeholder - use deployer)
-            deployer,                // buybackManager (placeholder - use deployer)
-            uniswapRouter           // router
+            "Strategy Token", // name
+            "STRAT", // symbol
+            1_000_000_000 * 1e18, // initialSupply
+            payable(deployer), // opsWallet
+            deployer, // feeCollector (placeholder - use deployer)
+            deployer, // buybackManager (placeholder - use deployer)
+            uniswapRouter, // router
+            wethAddress // weth
         );
         console.log("StratToken deployed at:", address(stratToken));
 
         // 4. Deploy BuybackManager (now we have stratToken)
         BuybackManager buybackManager = new BuybackManager(
-            address(stratToken),     // stratToken ✅
-            deployer,               // strategyCore (placeholder - use deployer)
-            uniswapRouter,          // router
-            deployer                // owner
+            address(stratToken), // stratToken ✅
+            deployer, // strategyCore (placeholder - use deployer)
+            uniswapRouter, // router
+            deployer // owner
         );
         console.log("BuybackManager deployed at:", address(buybackManager));
 
-        // 5. Deploy FeeCollector 
+        // 5. Deploy FeeCollector
         FeeCollector feeCollector = new FeeCollector(
-            address(penguToken),     // pengu
-            uniswapRouter,          // router
-            deployer,               // strategyCore (placeholder - use deployer)
-            address(treasury),      // treasury
-            deployer                // owner
+            address(penguToken), // pengu
+            uniswapRouter, // router
+            deployer, // strategyCore (placeholder - use deployer)
+            address(treasury), // treasury
+            deployer // owner
         );
         console.log("FeeCollector deployed at:", address(feeCollector));
 
         // 6. Deploy StrategyCore
         StrategyCore strategyCore = new StrategyCore(
-            address(penguToken),     // pengu
-            address(feeCollector),   // feeCollector
-            uniswapRouter,          // router
+            address(penguToken), // pengu
+            address(feeCollector), // feeCollector
+            uniswapRouter, // router
             address(buybackManager), // buybackManager
-            deployer                // owner
+            deployer // owner
         );
         console.log("StrategyCore deployed at:", address(strategyCore));
 
         // 7. Update placeholder addresses
         feeCollector.setStrategyCore(address(strategyCore));
-        
+
         // 8. Update StratToken addresses (если есть setters)
         // stratToken.setFeeCollector(address(feeCollector));
         // stratToken.setBuybackManager(address(buybackManager));

@@ -7,7 +7,10 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../interfaces/IUniswapV2Router02.sol";
 
 interface IUniswapV2Factory {
-    function createPair(address tokenA, address tokenB) external returns (address);
+    function createPair(
+        address tokenA,
+        address tokenB
+    ) external returns (address);
 }
 
 interface IFeeCollector {
@@ -16,19 +19,19 @@ interface IFeeCollector {
 
 contract StratToken is ERC20, Ownable, ReentrancyGuard {
     // ====== Configuration ======
-    uint16 public constant MAX_FEE_BPS = 1000;        // 10% hard cap
-    uint16 public constant BPS_DENOM = 10000;         // 100% in basis points
-    uint16 public constant OPS_SHARE_BPS = 2000;      // 20% of ETH to ops
+    uint16 public constant MAX_FEE_BPS = 1000; // 10% hard cap
+    uint16 public constant BPS_DENOM = 10000; // 100% in basis points
+    uint16 public constant OPS_SHARE_BPS = 2000; // 20% of ETH to ops
     uint16 public constant COLLECTOR_SHARE_BPS = 8000; // 80% of ETH to collector
-    
-    uint16 public totalFeeBps = 1000;                 // 10% default total fee
+
+    uint16 public totalFeeBps = 1000; // 10% default total fee
 
     address payable public opsWallet;
     address public feeCollector;
     address public buybackManager;
 
     IUniswapV2Router02 public router;
-    address public pair;      // Uniswap V2 pair (market)
+    address public pair; // Uniswap V2 pair (market)
     address public WETH;
 
     bool public tradingEnabled = false;
@@ -39,22 +42,37 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
     // swap-back for accumulated tokens
     bool public swapEnabled = true;
     bool private inSwap;
-    uint256 public swapThreshold = 1000 * 10**18;     // 1000 tokens threshold
-    uint256 public maxSwapAmount = 1000000 * 10**18;  // 1M tokens max per swap
+    uint256 public swapThreshold = 1000 * 10 ** 18; // 1000 tokens threshold
+    uint256 public maxSwapAmount = 1000000 * 10 ** 18; // 1M tokens max per swap
 
     // anti-whale limits
-    uint256 public maxWallet;          // in token wei
-    uint256 public maxTx;              // in token wei
-    bool    public limitsEnabled = true;
+    uint256 public maxWallet; // in token wei
+    uint256 public maxTx; // in token wei
+    bool public limitsEnabled = true;
 
     mapping(address => bool) public limitExempt;
 
     // ====== Events ======
     event FeeTaken(uint256 amount, address from);
-    event ImmediateSwapResult(bool success, uint256 tokensIn, uint256 ethOut, uint256 toOps, uint256 toCollector);
-    event SwapBackExecuted(uint256 tokensSold, uint256 ethReceived, uint256 toOps, uint256 toCollector);
+    event ImmediateSwapResult(
+        bool success,
+        uint256 tokensIn,
+        uint256 ethOut,
+        uint256 toOps,
+        uint256 toCollector
+    );
+    event SwapBackExecuted(
+        uint256 tokensSold,
+        uint256 ethReceived,
+        uint256 toOps,
+        uint256 toCollector
+    );
     event FeesUpdated(uint16 totalFeeBps);
-    event WalletsUpdated(address indexed opsWallet, address indexed feeCollector, address indexed buybackManager);
+    event WalletsUpdated(
+        address indexed opsWallet,
+        address indexed feeCollector,
+        address indexed buybackManager
+    );
     event MarketSet(address indexed account, bool isMarket);
     event FeeExemptSet(address indexed account, bool isExempt);
     event TradingEnabled();
@@ -80,20 +98,26 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
     constructor(
         string memory name_,
         string memory symbol_,
-        uint256 initialSupply,                  // e.g. 1_000_000_000 * 1e18
+        uint256 initialSupply, // e.g. 1_000_000_000 * 1e18
         address payable opsWallet_,
         address feeCollector_,
         address buybackManager_,
-        address router_                         // Router address for the network
+        address router_, // Router address for the network
+        address weth_ // WETH address for the network
     ) ERC20(name_, symbol_) Ownable(msg.sender) {
-        if (opsWallet_ == address(0) || feeCollector_ == address(0) || router_ == address(0)) revert ZeroAddress();
+        if (
+            opsWallet_ == address(0) ||
+            feeCollector_ == address(0) ||
+            router_ == address(0) ||
+            weth_ == address(0)
+        ) revert ZeroAddress();
 
         opsWallet = opsWallet_;
         feeCollector = feeCollector_;
         buybackManager = buybackManager_; // Can be zero initially
 
         router = IUniswapV2Router02(router_);
-        WETH = router.WETH();
+        WETH = weth_;
 
         // Create the V2 pair (token <-> WETH)
         pair = address(0); // Will be created after deployment
@@ -112,8 +136,8 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         }
 
         // Anti-whale limits: 3% max wallet, 1% max tx
-        maxWallet = (initialSupply * 3) / 100;   // 3% of supply
-        maxTx     = (initialSupply * 1) / 100;   // 1% of supply
+        maxWallet = (initialSupply * 3) / 100; // 3% of supply
+        maxTx = (initialSupply * 1) / 100; // 1% of supply
 
         // Limit exemptions (DO NOT exempt the pair)
         limitExempt[owner()] = true;
@@ -126,20 +150,24 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
     }
 
     // ====== Core transfer with fees ======
-    function _update(address from, address to, uint256 amount) internal override {
+    function _update(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override {
         // Cache state variables to save gas
         bool _tradingEnabled = tradingEnabled;
         bool _swapEnabled = swapEnabled;
         bool _inSwap = inSwap;
         uint16 _totalFeeBps = totalFeeBps;
-        
+
         // Owner can always move pre-launch
         if (!_tradingEnabled && from != owner() && to != owner()) {
             revert TradingDisabled();
         }
 
         bool marketFrom = isMarket[from];
-        bool marketTo   = isMarket[to];
+        bool marketTo = isMarket[to];
 
         // Apply anti-whale limits first
         _enforceTransactionLimits(from, to, amount, marketFrom, marketTo);
@@ -149,10 +177,10 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         bool toExempt = feeExempt[to];
 
         // Determine if fee should be taken
-        bool shouldTakeFee = _tradingEnabled
-            && !fromExempt
-            && !toExempt
-            && (marketFrom || marketTo);
+        bool shouldTakeFee = _tradingEnabled &&
+            !fromExempt &&
+            !toExempt &&
+            (marketFrom || marketTo);
 
         // Execute swap-back on sells
         if (_swapEnabled && !_inSwap && marketTo && from != address(this)) {
@@ -183,7 +211,7 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
     function _tryImmediateSwap(uint256 amount) private {
         if (pair == address(0)) return; // No pair yet, skip swap
         if (balanceOf(address(this)) < amount) return;
-        
+
         bool swapSuccess = false;
         uint256 ethReceived = 0;
         uint256 toOps = 0;
@@ -192,23 +220,29 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         try this._executeSwap(amount) returns (uint256 ethOut) {
             ethReceived = ethOut;
             swapSuccess = true;
-            
+
             if (ethReceived > 0) {
                 toOps = (ethReceived * OPS_SHARE_BPS) / BPS_DENOM;
                 toCollector = ethReceived - toOps;
                 _distributeETH(ethReceived);
             }
-        } catch {
+        } catch {}
 
-        }
-
-        emit ImmediateSwapResult(swapSuccess, swapSuccess ? amount : 0, ethReceived, toOps, toCollector);
+        emit ImmediateSwapResult(
+            swapSuccess,
+            swapSuccess ? amount : 0,
+            ethReceived,
+            toOps,
+            toCollector
+        );
     }
 
     // try/catch swap
-    function _executeSwap(uint256 tokenAmount) external lockTheSwap returns (uint256 ethOut) {
+    function _executeSwap(
+        uint256 tokenAmount
+    ) external lockTheSwap returns (uint256 ethOut) {
         require(msg.sender == address(this), "Only self");
-        
+
         _approve(address(this), address(router), tokenAmount);
 
         address[] memory path = new address[](2);
@@ -238,7 +272,7 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
 
         // send ETH to ops wallet
         if (toOps > 0) {
-            (bool success,) = opsWallet.call{value: toOps}("");
+            (bool success, ) = opsWallet.call{value: toOps}("");
             if (!success) revert SwapFailed();
         }
 
@@ -248,7 +282,7 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
                 // Success
             } catch {
                 // Fallback
-                (bool success,) = feeCollector.call{value: toCollector}("");
+                (bool success, ) = feeCollector.call{value: toCollector}("");
                 if (!success) revert SwapFailed();
             }
         }
@@ -256,10 +290,10 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
 
     // ====== Anti-whale limit enforcement ======
     function _enforceTransactionLimits(
-        address from, 
-        address to, 
-        uint256 amount, 
-        bool marketFrom, 
+        address from,
+        address to,
+        uint256 amount,
+        bool marketFrom,
         bool marketTo
     ) private view {
         // Ignore internal/contract flows to avoid maxTx reverts during swapback
@@ -280,14 +314,18 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         if (amount > maxTx) revert MaxTxExceeded();
 
         // Check max wallet limit for recipients (except when selling to pair)
-        if (!marketTo && to != address(0)) { // Added to != address(0) check
+        if (!marketTo && to != address(0)) {
+            // Added to != address(0) check
             uint256 potentialFee = 0;
-            bool hasMarketFee = !feeExempt[from] && !feeExempt[to] && (marketFrom || marketTo);
-            if (hasMarketFee) { 
+            bool hasMarketFee = !feeExempt[from] &&
+                !feeExempt[to] &&
+                (marketFrom || marketTo);
+            if (hasMarketFee) {
                 potentialFee = (amount * totalFeeBps) / BPS_DENOM;
             }
             uint256 finalAmount = amount - potentialFee;
-            if (balanceOf(to) + finalAmount > maxWallet) revert MaxWalletExceeded();
+            if (balanceOf(to) + finalAmount > maxWallet)
+                revert MaxWalletExceeded();
         }
     }
 
@@ -297,7 +335,9 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         uint256 tokenBal = balanceOf(address(this));
         if (tokenBal < swapThreshold) return;
 
-        uint256 amountToSwap = tokenBal > maxSwapAmount ? maxSwapAmount : tokenBal;
+        uint256 amountToSwap = tokenBal > maxSwapAmount
+            ? maxSwapAmount
+            : tokenBal;
 
         // approve router
         _approve(address(this), address(router), amountToSwap);
@@ -308,14 +348,20 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
 
         uint256 pre = address(this).balance;
 
-        try router.swapExactTokensForETHSupportingFeeOnTransferTokens(
-            amountToSwap, 0, path, address(this), block.timestamp + 300
-        ) {
+        try
+            router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+                amountToSwap,
+                0,
+                path,
+                address(this),
+                block.timestamp + 300
+            )
+        {
             uint256 got = address(this).balance - pre;
             if (got > 0) {
                 uint256 toOps = (got * OPS_SHARE_BPS) / BPS_DENOM;
                 uint256 toCollector = got - toOps;
-                
+
                 _distributeETH(got);
                 emit SwapBackExecuted(amountToSwap, got, toOps, toCollector);
             }
@@ -331,10 +377,13 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
      */
     function createPair() external onlyOwner {
         if (pair != address(0)) revert InvalidInput(); // Pair already exists
-        
-        pair = IUniswapV2Factory(router.factory()).createPair(address(this), WETH);
+
+        pair = IUniswapV2Factory(router.factory()).createPair(
+            address(this),
+            WETH
+        );
         isMarket[pair] = true;
-        
+
         emit MarketSet(pair, true);
     }
 
@@ -350,34 +399,35 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
     }
 
     function setWallets(
-        address payable newOpsWallet, 
+        address payable newOpsWallet,
         address newFeeCollector,
         address newBuybackManager
     ) external onlyOwner {
-        if (newOpsWallet == address(0) || newFeeCollector == address(0)) revert ZeroAddress();
-        
+        if (newOpsWallet == address(0) || newFeeCollector == address(0))
+            revert ZeroAddress();
+
         opsWallet = newOpsWallet;
         feeCollector = newFeeCollector;
-        
+
         // Update buyback manager
         if (buybackManager != address(0)) {
             feeExempt[buybackManager] = false;
             limitExempt[buybackManager] = false;
         }
-        
+
         buybackManager = newBuybackManager;
-        
+
         // Set exemptions
         feeExempt[newOpsWallet] = true;
         feeExempt[newFeeCollector] = true;
         limitExempt[newOpsWallet] = true;
         limitExempt[newFeeCollector] = true;
-        
+
         if (newBuybackManager != address(0)) {
             feeExempt[newBuybackManager] = true;
             limitExempt[newBuybackManager] = true;
         }
-        
+
         emit WalletsUpdated(newOpsWallet, newFeeCollector, newBuybackManager);
     }
 
@@ -393,21 +443,29 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         emit FeeExemptSet(account, v);
     }
 
-    function setSwapSettings(uint256 threshold, uint256 maxAmt, bool enabled) external onlyOwner {
+    function setSwapSettings(
+        uint256 threshold,
+        uint256 maxAmt,
+        bool enabled
+    ) external onlyOwner {
         swapThreshold = threshold;
         maxSwapAmount = maxAmt;
         swapEnabled = enabled;
         emit SwapSettingsSet(threshold, maxAmt, enabled);
     }
 
-    function setLimits(uint256 newMaxTx, uint256 newMaxWallet, bool enabled) external onlyOwner {
+    function setLimits(
+        uint256 newMaxTx,
+        uint256 newMaxWallet,
+        bool enabled
+    ) external onlyOwner {
         if (newMaxTx == 0 || newMaxWallet == 0) revert InvalidInput();
         if (newMaxWallet < newMaxTx) revert InvalidInput();
-        
+
         maxTx = newMaxTx;
         maxWallet = newMaxWallet;
         limitsEnabled = enabled;
-        
+
         emit LimitsUpdated(newMaxTx, newMaxWallet, enabled);
     }
 
@@ -417,7 +475,9 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         emit LimitExemptSet(account, v);
     }
 
-    function manualSwap(uint256 amount) external onlyOwner lockTheSwap nonReentrant {
+    function manualSwap(
+        uint256 amount
+    ) external onlyOwner lockTheSwap nonReentrant {
         uint256 bal = balanceOf(address(this));
         if (amount == 0 || amount > bal) amount = bal;
         if (bal == 0) return;
@@ -430,9 +490,15 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
 
         uint256 pre = address(this).balance;
 
-        try router.swapExactTokensForETHSupportingFeeOnTransferTokens(
-            amount, 0, path, address(this), block.timestamp + 300
-        ) {
+        try
+            router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+                amount,
+                0,
+                path,
+                address(this),
+                block.timestamp + 300
+            )
+        {
             uint256 got = address(this).balance - pre;
             if (got > 0) {
                 _distributeETH(got);
@@ -450,7 +516,7 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
 
     // ====== Emergency Functions ======
     function rescueETH(uint256 amount) external onlyOwner {
-        (bool ok,) = owner().call{value: amount}("");
+        (bool ok, ) = owner().call{value: amount}("");
         if (!ok) revert SwapFailed();
     }
 
@@ -461,7 +527,10 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
 
     // ====== View Functions ======
     function getCirculatingSupply() external view returns (uint256) {
-        return totalSupply() - balanceOf(address(0)) - balanceOf(address(0x000000000000000000000000000000000000dEaD));
+        return
+            totalSupply() -
+            balanceOf(address(0)) -
+            balanceOf(address(0x000000000000000000000000000000000000dEaD));
     }
 
     function isExcludedFromFee(address account) external view returns (bool) {
