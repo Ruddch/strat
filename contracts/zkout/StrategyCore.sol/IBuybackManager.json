@@ -1,0 +1,1 @@
+{"abi":[{"type":"function","name":"receiveFromStrategy","inputs":[{"name":"caller","type":"address","internalType":"address"}],"outputs":[],"stateMutability":"payable"}],"storageLayout":{"storage":[],"types":{}},"userdoc":{},"devdoc":{},"factoryDependencies":{},"factoryDependenciesUnlinked":[],"id":35}
