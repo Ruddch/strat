@@ -115,7 +115,7 @@ export function MobileNavigation() {
             <Link
               href="/claim"
               className={`block text-[14px] font-light leading-[150%] tracking-[0%] font-[family-name:var(--font-martian-mono)] hover:opacity-80 transition-opacity cursor-pointer ${
-                pathname === "/claim"
+                pathname === "/claim/"
                   ? "text-[var(--color-text-accent)]"
                   : "text-white"
               }`}
