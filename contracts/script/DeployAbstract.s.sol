@@ -11,11 +11,22 @@ import "../src/mocks/MockPengu.sol";
 
 contract DeployAbstractScript is Script {
     function run() external {
+        // uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        // address deployer = vm.addr(deployerPrivateKey);
+
+        uint256 forkId = vm.createFork(vm.envString("RPC_URL"));
+        vm.selectFork(forkId); // теперь локальная EVM «знает» стейт сети
+
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
 
+        uint64 n = vm.getNonce(deployer); // тут вернётся реальный nonce из форка
+        console.log("Nonce before:", n);
+
         console.log("Deploying from:", deployer);
         console.log("Balance:", deployer.balance);
+        console.log("ChainID:", block.chainid);
+        console.log("Nonce:", vm.getNonce(deployer));
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -80,7 +91,7 @@ contract DeployAbstractScript is Script {
 
         // 8. Update StratToken addresses
         stratToken.setWallets(
-            payable(deployer), 
+            payable(deployer),
             address(feeCollector),
             address(buybackManager)
         );
@@ -89,7 +100,7 @@ contract DeployAbstractScript is Script {
         //stratToken.createPair();
         //stratToken.enableTrading();
 
-        // 10. Initialize Treasury  
+        // 10. Initialize Treasury
         treasury.startNewEpoch();
 
         vm.stopBroadcast();

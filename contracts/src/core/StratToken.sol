@@ -11,7 +11,7 @@ interface IUniswapV2Factory {
         address tokenA,
         address tokenB
     ) external returns (address);
-    
+
     function getPair(
         address tokenA,
         address tokenB
@@ -65,6 +65,14 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         uint256 ethOut,
         uint256 toOps,
         uint256 toCollector
+    );
+    event SwapDebug(
+        string step,
+        uint256 amount,
+        uint256 balance,
+        address pair,
+        uint256 ethOut,
+        bool success
     );
     event SwapBackExecuted(
         uint256 tokensSold,
@@ -214,8 +222,39 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
     }
 
     function _tryImmediateSwap(uint256 amount) private {
-        if (pair == address(0)) return;
-        if (balanceOf(address(this)) < amount) return;
+        emit SwapDebug(
+            "START",
+            amount,
+            balanceOf(address(this)),
+            pair,
+            0,
+            false
+        );
+
+        if (pair == address(0)) {
+            emit SwapDebug(
+                "ERROR_NO_PAIR",
+                amount,
+                balanceOf(address(this)),
+                pair,
+                0,
+                false
+            );
+            return;
+        }
+
+        uint256 contractBalance = balanceOf(address(this));
+        if (contractBalance < amount) {
+            emit SwapDebug(
+                "ERROR_INSUFFICIENT_BALANCE",
+                amount,
+                contractBalance,
+                pair,
+                0,
+                false
+            );
+            return;
+        }
 
         bool swapSuccess = false;
         uint256 ethReceived = 0;
@@ -223,13 +262,38 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         uint256 toCollector = 0;
 
         uint256 ethOut = _internalSwap(amount);
-        
+        emit SwapDebug(
+            "INTERNAL_SWAP_RESULT",
+            amount,
+            contractBalance,
+            pair,
+            ethOut,
+            ethOut > 0
+        );
+
         if (ethOut > 0) {
             ethReceived = ethOut;
             swapSuccess = true;
             toOps = (ethReceived * OPS_SHARE_BPS) / BPS_DENOM;
             toCollector = ethReceived - toOps;
             _distributeETH(ethReceived);
+            emit SwapDebug(
+                "SUCCESS",
+                amount,
+                contractBalance,
+                pair,
+                ethReceived,
+                true
+            );
+        } else {
+            emit SwapDebug(
+                "ERROR_SWAP_FAILED",
+                amount,
+                contractBalance,
+                pair,
+                0,
+                false
+            );
         }
 
         emit ImmediateSwapResult(
@@ -241,32 +305,94 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         );
     }
 
-    function _internalSwap(uint256 tokenAmount) private returns (uint256 ethOut) {
-        if (inSwap) return 0;
-        
+    function _internalSwap(
+        uint256 tokenAmount
+    ) private returns (uint256 ethOut) {
+        if (inSwap) {
+            emit SwapDebug(
+                "ERROR_ALREADY_IN_SWAP",
+                tokenAmount,
+                0,
+                address(0),
+                0,
+                false
+            );
+            return 0;
+        }
+
         inSwap = true;
-        
+        emit SwapDebug(
+            "SWAP_START",
+            tokenAmount,
+            balanceOf(address(this)),
+            pair,
+            0,
+            false
+        );
+
         _approve(address(this), address(router), tokenAmount);
-        
+        emit SwapDebug(
+            "APPROVAL_DONE",
+            tokenAmount,
+            balanceOf(address(this)),
+            pair,
+            0,
+            false
+        );
+
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = WETH;
-        
+
         uint256 balanceBefore = address(this).balance;
-        
-        try router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+        emit SwapDebug(
+            "BALANCE_BEFORE",
             tokenAmount,
+            balanceBefore,
+            pair,
             0,
-            path,
-            address(this),
-            block.timestamp + 300
-        ) {
+            false
+        );
+
+        try
+            router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+                tokenAmount,
+                0,
+                path,
+                address(this),
+                block.timestamp + 300
+            )
+        {
             ethOut = address(this).balance - balanceBefore;
+            emit SwapDebug(
+                "SWAP_SUCCESS",
+                tokenAmount,
+                address(this).balance,
+                pair,
+                ethOut,
+                true
+            );
         } catch {
             ethOut = 0;
+            emit SwapDebug(
+                "SWAP_CATCH_ERROR",
+                tokenAmount,
+                address(this).balance,
+                pair,
+                0,
+                false
+            );
         }
-        
+
         inSwap = false;
+        emit SwapDebug(
+            "SWAP_END",
+            tokenAmount,
+            address(this).balance,
+            pair,
+            ethOut,
+            ethOut > 0
+        );
         return ethOut;
     }
 
@@ -385,11 +511,16 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
     function createPair() external onlyOwner {
         if (pair != address(0)) revert InvalidInput();
         address factory = router.factory();
-        address existingPair = IUniswapV2Factory(factory).getPair(address(this), WETH);
+        address existingPair = IUniswapV2Factory(factory).getPair(
+            address(this),
+            WETH
+        );
         if (existingPair != address(0)) {
             pair = existingPair;
+            emit SwapDebug("PAIR_EXISTING", 0, 0, existingPair, 0, true);
         } else {
             pair = IUniswapV2Factory(factory).createPair(address(this), WETH);
+            emit SwapDebug("PAIR_CREATED", 0, 0, pair, 0, true);
         }
         isMarket[pair] = true;
         emit MarketSet(pair, true);
