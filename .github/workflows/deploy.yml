@@ -25,15 +25,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          
-      - name: Install pnpm
-        run: npm install -g pnpm@9
+          cache: 'npm'
+          cache-dependency-path: 'main/package-lock.json'
             
       - name: Install dependencies
-        run: cd main && pnpm install
+        run: cd main && npm ci
         
       - name: Build Next.js app
-        run: cd main && pnpm run export
+        run: cd main && npm run export
         
       - name: Setup Pages
         uses: actions/configure-pages@v4
