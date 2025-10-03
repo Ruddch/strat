@@ -78,11 +78,18 @@ contract DeployAbstractScript is Script {
         // 7. Update placeholder addresses
         feeCollector.setStrategyCore(address(strategyCore));
 
-        // 8. Update StratToken addresses (если есть setters)
-        // stratToken.setFeeCollector(address(feeCollector));
-        // stratToken.setBuybackManager(address(buybackManager));
+        // 8. Update StratToken addresses
+        stratToken.setWallets(
+            payable(deployer), 
+            address(feeCollector),
+            address(buybackManager)
+        );
 
-        // 9. Initialize Treasury
+        // 9. Create pair and enable trading
+        //stratToken.createPair();
+        //stratToken.enableTrading();
+
+        // 10. Initialize Treasury  
         treasury.startNewEpoch();
 
         vm.stopBroadcast();

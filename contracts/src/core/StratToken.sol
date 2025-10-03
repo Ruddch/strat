@@ -11,6 +11,11 @@ interface IUniswapV2Factory {
         address tokenA,
         address tokenB
     ) external returns (address);
+    
+    function getPair(
+        address tokenA,
+        address tokenB
+    ) external view returns (address);
 }
 
 interface IFeeCollector {
@@ -209,7 +214,7 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
     }
 
     function _tryImmediateSwap(uint256 amount) private {
-        if (pair == address(0)) return; // No pair yet, skip swap
+        if (pair == address(0)) return;
         if (balanceOf(address(this)) < amount) return;
 
         bool swapSuccess = false;
@@ -217,16 +222,15 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         uint256 toOps = 0;
         uint256 toCollector = 0;
 
-        try this._executeSwap(amount) returns (uint256 ethOut) {
+        uint256 ethOut = _internalSwap(amount);
+        
+        if (ethOut > 0) {
             ethReceived = ethOut;
             swapSuccess = true;
-
-            if (ethReceived > 0) {
-                toOps = (ethReceived * OPS_SHARE_BPS) / BPS_DENOM;
-                toCollector = ethReceived - toOps;
-                _distributeETH(ethReceived);
-            }
-        } catch {}
+            toOps = (ethReceived * OPS_SHARE_BPS) / BPS_DENOM;
+            toCollector = ethReceived - toOps;
+            _distributeETH(ethReceived);
+        }
 
         emit ImmediateSwapResult(
             swapSuccess,
@@ -237,29 +241,32 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         );
     }
 
-    // try/catch swap
-    function _executeSwap(
-        uint256 tokenAmount
-    ) external lockTheSwap returns (uint256 ethOut) {
-        require(msg.sender == address(this), "Only self");
-
+    function _internalSwap(uint256 tokenAmount) private returns (uint256 ethOut) {
+        if (inSwap) return 0;
+        
+        inSwap = true;
+        
         _approve(address(this), address(router), tokenAmount);
-
+        
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = WETH;
-
+        
         uint256 balanceBefore = address(this).balance;
-
-        router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+        
+        try router.swapExactTokensForETHSupportingFeeOnTransferTokens(
             tokenAmount,
-            0, // Accept any amount of ETH
+            0,
             path,
             address(this),
             block.timestamp + 300
-        );
-
-        ethOut = address(this).balance - balanceBefore;
+        ) {
+            ethOut = address(this).balance - balanceBefore;
+        } catch {
+            ethOut = 0;
+        }
+        
+        inSwap = false;
         return ethOut;
     }
 
@@ -376,14 +383,15 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
      * @dev Must be called before enabling trading
      */
     function createPair() external onlyOwner {
-        if (pair != address(0)) revert InvalidInput(); // Pair already exists
-
-        pair = IUniswapV2Factory(router.factory()).createPair(
-            address(this),
-            WETH
-        );
+        if (pair != address(0)) revert InvalidInput();
+        address factory = router.factory();
+        address existingPair = IUniswapV2Factory(factory).getPair(address(this), WETH);
+        if (existingPair != address(0)) {
+            pair = existingPair;
+        } else {
+            pair = IUniswapV2Factory(factory).createPair(address(this), WETH);
+        }
         isMarket[pair] = true;
-
         emit MarketSet(pair, true);
     }
 

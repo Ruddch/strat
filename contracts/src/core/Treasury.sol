@@ -86,8 +86,7 @@ contract Treasury is Ownable, Pausable, ReentrancyGuard {
             if (prev.isFinalized) prev.isClaimable = true;
         }
         
-        // ✅ ИСПРАВЛЕНО: Делаем не claimable эпоху, из которой УЖЕ взят rollover
-        if (currentEpoch > 3) epochs[currentEpoch - 3].isClaimable = false; // БЫЛО: currentEpoch - 2
+        if (currentEpoch > 3) epochs[currentEpoch - 3].isClaimable = false;
         emit EpochEnded(currentEpoch, block.timestamp, epoch.totalDividends);
     }
 
@@ -129,7 +128,6 @@ contract Treasury is Ownable, Pausable, ReentrancyGuard {
         require(epochs[currentEpoch].endTime == 0, "Epoch already ended");
         require(amount > 0, "Amount must be positive");
 
-        // Токены уже были отправлены на контракт, просто учитываем их для текущей эпохи
         epochs[currentEpoch].totalDividends += amount;
         emit DividendsAdded(currentEpoch, amount);
     }
