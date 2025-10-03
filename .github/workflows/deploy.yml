@@ -29,7 +29,7 @@ jobs:
           cache-dependency-path: 'main/package-lock.json'
             
       - name: Install dependencies
-        run: cd main && npm ci
+        run: cd main && npm ci --legacy-peer-deps
         
       - name: Build Next.js app
         run: cd main && npm run export
