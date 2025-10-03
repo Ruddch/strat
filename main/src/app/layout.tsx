@@ -4,6 +4,7 @@ import { Geist, Geist_Mono, Oswald, Martian_Mono } from "next/font/google";
 import NextAbstractWalletProvider from "@/components/NextAbstractWalletProvider";
 import { Navigation } from "@/components/Navigation";
 import { RightNavigation } from "@/components/RightNavigation";
+import { MobileNavigation } from "@/components/MobileNavigation";
 import { ScrollProvider } from "@/contexts/ScrollContext";
 import "./globals.css";
 
@@ -60,6 +61,7 @@ export default function RootLayout({
             className={`${geistSans.variable} ${geistMono.variable} ${avenueMono.variable} ${oswald.variable} ${martianMono.variable} ${randomGrotesque.variable} antialiased`}
           >
             <Navigation />
+            <MobileNavigation />
             {children}
             <RightNavigation />
           </body>

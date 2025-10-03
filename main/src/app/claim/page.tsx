@@ -4,39 +4,45 @@ import { useAccount } from "wagmi";
 import { ConnectKitButton } from "connectkit";
 import dynamic from "next/dynamic";
 
-const BackgroundEffects = dynamic(() => import("@/components/ui/BackgroundEffects").then(mod => ({ default: mod.BackgroundEffects })), { 
+const ResponsiveBackgroundEffects = dynamic(() => import("@/components/ui/ResponsiveBackgroundEffects").then(mod => ({ default: mod.ResponsiveBackgroundEffects })), { 
   ssr: false 
 });
+
+// Utility function to truncate wallet addresses
+const truncateAddress = (address: string, startChars: number = 6, endChars: number = 4) => {
+  if (address.length <= startChars + endChars) return address;
+  return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
+};
 
 // Mock data for payouts
 const payouts = [
   {
     id: 1,
-    walletAddress: "0x123845785214789",
+    walletAddress: "0x1234567890abcdef1234567890abcdef12345678",
     amount: 1000,
     date: "5.01.2025"
   },
   {
     id: 2,
-    walletAddress: "0x123845785214789",
+    walletAddress: "0xabcdef1234567890abcdef1234567890abcdef12",
     amount: 1000,
     date: "5.01.2025"
   },
   {
     id: 3,
-    walletAddress: "0x123845785214789",
+    walletAddress: "0x9876543210fedcba9876543210fedcba98765432",
     amount: 1000,
     date: "5.01.2025"
   },
   {
     id: 4,
-    walletAddress: "0x123845785214789",
+    walletAddress: "0xfedcba9876543210fedcba9876543210fedcba98",
     amount: 1000,
     date: "5.01.2025"
   },
   {
     id: 5,
-    walletAddress: "0x123845785214789",
+    walletAddress: "0x5555555555555555555555555555555555555555",
     amount: 1000,
     date: "5.01.2025"
   }
@@ -46,9 +52,9 @@ export default function ClaimPage() {
   const { address } = useAccount();
 
   return (
-    <div className="ml-64 mr-64 font-[family-name:var(--font-avenue-mono)] h-screen no-scrollbar overflow-y-scroll snap-y snap-mandatory">
+    <div className="ml-0 mr-0 lg:ml-64 lg:mr-64 font-[family-name:var(--font-avenue-mono)] h-screen no-scrollbar overflow-y-scroll snap-y snap-mandatory">
       <div id="claim" className="relative grid grid-rows-[1fr_auto] min-h-screen snap-start">
-        <BackgroundEffects message="CLAIM" />
+        <ResponsiveBackgroundEffects message="CLAIM" mobileFontSize={50} desktopFontSize={200} />
         <main className="relative flex flex-col justify-between h-full z-10 text-white">
           {/* Top Section - Metrics */}
           <div className="flex justify-between w-full border-b border-[var(--color-border-accent)]">
@@ -56,15 +62,15 @@ export default function ClaimPage() {
               <p className="text-sm text-gray-300 mb-2 font-[family-name:var(--font-martian-mono)]">
                 Total claimed dividends
               </p>
-              <p className="text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
+              <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
                 5 587
               </p>
             </div>
             <div className="flex-1 text-center pb-7 pt-13">
               <p className="text-sm text-gray-300 mb-2 font-[family-name:var(--font-martian-mono)]">
-                This week dividends
+                This week<br className="lg:hidden" /> dividends
               </p>
-              <p className="text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
+              <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
                 6 847
               </p>
             </div>
@@ -100,11 +106,11 @@ export default function ClaimPage() {
                         border: '1px solid rgba(20, 78, 82, 1)'
                       }}
                     >
-                      <span className="text-[48px] font-normal leading-[100%] tracking-[0%] text-center font-[family-name:var(--font-random-grotesque)]"
+                      <span className="text-[24px] lg:text-[48px] font-normal leading-[100%] tracking-[0%] text-center font-[family-name:var(--font-random-grotesque)]"
                         style={{ color: 'rgba(0, 255, 251, 1)' }}
                       >
                         {isConnecting ? (
-                          <div className="animate-spin w-8 h-8 border-2 border-current border-t-transparent rounded-full" />
+                          <div className="animate-spin w-4 h-4 lg:w-8 lg:h-8 border-2 border-current border-t-transparent rounded-full" />
                         ) : (
                           isConnected ? 'CLAIM' : 'CONNECT WALLET'
                         )}
@@ -116,7 +122,7 @@ export default function ClaimPage() {
             </div>
           </div>
              <div>
-               <h2 className="pt-11 pb-11 pl-2 pr-2 border-b border-t border-[var(--color-border-accent)] text-[72px] font-normal leading-[100%] tracking-[0%] text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
+               <h2 className="pt-13 lg:pt-11 pb-11 pl-2 pr-2 border-b border-t border-[var(--color-border-accent)] text-[36px] lg:text-[72px] font-normal leading-[100%] tracking-[0%] text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
                  Last Payouts
                </h2>
                
@@ -145,12 +151,12 @@ export default function ClaimPage() {
                      <div className="flex-1 flex items-center text-left p-2 py-5 border-b border-[var(--color-border-accent)]">
                         <span className="text-sm font-light leading-[150%] tracking-[0%] text-white font-[family-name:var(--font-martian-mono)]"
                         >
-                         {payout.walletAddress}
+                         {truncateAddress(payout.walletAddress)}
                        </span>
                      </div>
                      <div className="flex-1 border-l p-2 py-5 border-b border-[var(--color-border-accent)]">
                        <div className="flex items-center justify-between gap-2">
-                         <span className="text-[40px] font-normal leading-[100%] tracking-[0%] text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
+                         <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
                            {payout.amount}
                          </span>
                            <span className="text-sm font-light leading-[150%] tracking-[0%] text-white font-[family-name:var(--font-martian-mono)]"

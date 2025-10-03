@@ -21,7 +21,7 @@ export function Navigation() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 bottom-0 w-64 z-50 pl-10">
+    <nav className="fixed top-0 left-0 bottom-0 w-64 z-50 pl-10 hidden lg:block">
       <div className="flex flex-col h-full p-2 pt-11 pb-31 border-l border-r border-[var(--color-border-accent)]">
         {/* Logo/Brand */}
         <div className="mb-8">

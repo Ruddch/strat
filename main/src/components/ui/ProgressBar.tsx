@@ -19,7 +19,7 @@ export function ProgressBar({ percentage, className = '', containerRef }: Progre
       const gap = 5;
       const availableWidth = containerWidth - 15;
       const dashes = Math.floor(availableWidth / (dashWidth + gap));
-      setTotalDashes(Math.max(dashes, 50));
+      setTotalDashes(Math.max(dashes, 10));
     }
   }, [containerRef?.current]);
 

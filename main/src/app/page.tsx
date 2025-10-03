@@ -10,7 +10,7 @@ const ProgressBar = dynamic(() => import("@/components/ui/ProgressBar").then(mod
 // import { useAccount } from "wagmi";
 // import { ConnectedState } from "@/components/wallet/ConnectedState";
 
-const BackgroundEffects = dynamic(() => import("@/components/ui/BackgroundEffects").then(mod => ({ default: mod.BackgroundEffects })), { 
+const ResponsiveBackgroundEffects = dynamic(() => import("@/components/ui/ResponsiveBackgroundEffects").then(mod => ({ default: mod.ResponsiveBackgroundEffects })), { 
   ssr: false 
 });
 
@@ -80,10 +80,10 @@ export default function Home() {
   }, [setActiveSection]);
 
   return (
-    <div className="ml-64 mr-64 font-[family-name:var(--font-avenue-mono)] h-screen no-scrollbar overflow-y-scroll snap-y snap-mandatory">
+    <div className="ml-0 mr-0 lg:ml-64 lg:mr-64 font-[family-name:var(--font-avenue-mono)] h-screen no-scrollbar overflow-y-scroll snap-y snap-mandatory">
       {/* First Section - Original Dashboard */}
       <div id="live" ref={containerRef} className="relative grid grid-rows-[1fr_auto] min-h-screen snap-start">
-        <BackgroundEffects />
+        <ResponsiveBackgroundEffects mobileFontSize={50} desktopFontSize={200} />
         <main className="relative flex flex-col justify-between w-full h-full z-10 text-white">
           {/* Top Section - Metrics */}
           <div className="flex justify-between w-full border-b border-[var(--color-border-accent)]">
@@ -91,7 +91,7 @@ export default function Home() {
               <p className="text-sm text-gray-300 mb-2 font-[family-name:var(--font-martian-mono)]">
                 Total commissions
               </p>
-              <p className="text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
+              <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
                 5 587
               </p>
             </div>
@@ -99,7 +99,7 @@ export default function Home() {
               <p className="text-sm text-gray-300 mb-2 font-[family-name:var(--font-martian-mono)]">
                 Total bought
               </p>
-              <p className="text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
+              <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
                 6 847
               </p>
             </div>
@@ -140,7 +140,7 @@ export default function Home() {
       {/* Second Section - Take Profit */}
       <div id="take-profit" ref={takeProfitRef} className="relative min-h-screen z-10 text-white snap-start">
         <div>
-          <h2 className="pt-11 pb-11 pl-2 pr-2 border-b border-t border-[var(--color-border-accent)] text-[72px] font-normal leading-[100%] tracking-[0%] text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
+          <h2 className="pt-13 lg:pt-11 pb-11 pl-2 pr-2 border-b border-t border-[var(--color-border-accent)] text-[36px] lg:text-[72px] font-normal leading-[100%] tracking-[0%] text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
             Take Profit
           </h2>
           
@@ -172,22 +172,22 @@ export default function Home() {
              {orders.map((order, index) => (
                <div key={order.id} className={`flex w-full ${index % 2 === 1 ? 'bg-[rgba(96,255,255,0.05)]' : ''}`}>
                  <div key={order.id} className="flex-1 text-left p-2 pb-8 pt-8 border-b border-[var(--color-border-accent)]">
-                   <span className="text-[40px] font-normal leading-[100%] tracking-[0%] text-white font-[family-name:var(--font-random-grotesque)]">
+                   <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-white font-[family-name:var(--font-random-grotesque)]">
                      {order.amount}
                    </span>
                  </div>
                  <div className="flex-1 border-l p-2 pb-8 pt-8 border-b border-[var(--color-border-accent)]">
-                   <span className="text-[40px] font-normal leading-[100%] tracking-[0%] text-white font-[family-name:var(--font-random-grotesque)]">
+                   <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-white font-[family-name:var(--font-random-grotesque)]">
                      {order.price}
                    </span>
                  </div>
                  <div className="flex-1 border-l p-2 pb-8 pt-8 border-b border-[var(--color-border-accent)]">
-                   <span className="text-[40px] font-normal leading-[100%] tracking-[0%] text-white font-[family-name:var(--font-random-grotesque)]">
+                   <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-white font-[family-name:var(--font-random-grotesque)]">
                      {order.multiplier}x
                    </span>
                  </div>
                  <div className="flex-1 p-2 pb-8 pt-8 border-l border-b border-[var(--color-border-accent)]">
-                   <span className="text-[40px] font-normal leading-[100%] tracking-[0%] text-[#00FF00] font-[family-name:var(--font-random-grotesque)]">
+                   <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-[#00FF00] font-[family-name:var(--font-random-grotesque)]">
                      +{order.predictedGain}
                    </span>
                  </div>
@@ -199,7 +199,7 @@ export default function Home() {
       {/* Third Section - Treasury */}
       <div id="treasury" ref={treasuryRef} className="relative min-h-screen z-10 text-white snap-start">
         <div>
-          <h2 className="pt-11 pb-11 pl-2 pr-2 border-b border-t border-[var(--color-border-accent)] text-[72px] font-normal leading-[100%] tracking-[0%] text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
+          <h2 className="pt-13 lg:pt-11 pb-11 pl-2 pr-2 border-b border-t border-[var(--color-border-accent)] text-[36px] lg:text-[72px] font-normal leading-[100%] tracking-[0%] text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
             Treasury
           </h2>
           
@@ -210,7 +210,7 @@ export default function Home() {
               <p className="text-[14px] font-light leading-[150%] tracking-[0%] text-white mb-2 font-[family-name:var(--font-martian-mono)]">
                 Current holding
               </p>
-              <p className="text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
+              <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
                 1 587
               </p>
             </div>
@@ -220,7 +220,7 @@ export default function Home() {
               <p className="text-[14px] font-light leading-[150%] tracking-[0%] text-white mb-2 font-[family-name:var(--font-martian-mono)]">
                 Total dividends paid
               </p>
-              <p className="text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
+              <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
                 12 587
               </p>
             </div>
