@@ -1,5 +1,5 @@
 import { createConfig, http } from "wagmi";
-import { abstractTestnet, abstract } from "viem/chains";
+import { abstractTestnet } from "viem/chains";
 import { abstractWalletConnector } from "@abstract-foundation/agw-react/connectors";
 
 export const config = createConfig({
