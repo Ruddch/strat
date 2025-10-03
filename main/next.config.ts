@@ -6,9 +6,9 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true
   },
-  // Раскомментируйте следующие строки, если ваш репозиторий не находится в корне GitHub Pages
-  // basePath: '/your-repo-name',
-  // assetPrefix: '/your-repo-name/',
+  // Настройки для GitHub Pages
+  basePath: '/strat',
+  assetPrefix: '/strat/',
 };
 
 export default nextConfig;
