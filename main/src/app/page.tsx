@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useRef, useEffect } from "react";
 import { useScroll } from "@/contexts/ScrollContext";
+import { OrientationLock } from "@/components/ui/OrientationLock";
 
 const ProgressBar = dynamic(() => import("@/components/ui/ProgressBar").then(mod => ({ default: mod.ProgressBar })), { 
   ssr: false 
@@ -80,10 +81,11 @@ export default function Home() {
   }, [setActiveSection]);
 
   return (
-    <div className="ml-0 mr-0 lg:ml-64 lg:mr-64 font-[family-name:var(--font-avenue-mono)] h-screen no-scrollbar overflow-y-scroll snap-y snap-mandatory">
+    <OrientationLock>
+      <div className="ml-0 mr-0 lg:ml-64 lg:mr-64 font-[family-name:var(--font-avenue-mono)] h-screen no-scrollbar overflow-y-scroll snap-y snap-mandatory">
       {/* First Section - Original Dashboard */}
       <div id="live" ref={containerRef} className="relative grid grid-rows-[1fr_auto] min-h-screen snap-start">
-        <ResponsiveBackgroundEffects mobileFontSize={50} desktopFontSize={200} />
+        <ResponsiveBackgroundEffects mobileFontSize={30} desktopFontSize={200} />
         <main className="relative flex flex-col justify-between w-full h-full z-10 text-white">
           {/* Top Section - Metrics */}
           <div className="flex justify-between w-full border-b border-[var(--color-border-accent)]">
@@ -227,6 +229,7 @@ export default function Home() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </OrientationLock>
   );
 }

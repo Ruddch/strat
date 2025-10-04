@@ -76,13 +76,15 @@ interface BackgroundEffectsProps {
     fontSize?: number;
     fontColor?: [number, number, number, number];
     density?: number;
+    repelThreshold?: number;
 }
 
 export function BackgroundEffects({ 
     message = 'PENGU STRATEGY',
     fontSize = 200,
     fontColor = [13, 48, 55, 130],
-    density = 1
+    density = 1,
+    repelThreshold = 100
 }: BackgroundEffectsProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationRef = useRef<number | undefined>(undefined);
@@ -108,11 +110,14 @@ export function BackgroundEffects({
     const handleResizeRef = useRef<(() => void) | undefined>(undefined);
     const handleMouseMoveRef = useRef<((event: MouseEvent) => void) | undefined>(undefined);
     const handleMouseOutRef = useRef<(() => void) | undefined>(undefined);
+    const handleTouchStartRef = useRef<((event: TouchEvent) => void) | undefined>(undefined);
+    const handleTouchMoveRef = useRef<((event: TouchEvent) => void) | undefined>(undefined);
+    const handleTouchEndRef = useRef<(() => void) | undefined>(undefined);
 
     const options = useMemo(() => ({
         mouse: {
             lerpAmt: 0.5,
-            repelThreshold: 100
+            repelThreshold: repelThreshold
         },
         particles: {
             density,
@@ -131,7 +136,7 @@ export function BackgroundEffects({
             },
             message
         }
-    }), [density, fontColor, fontSize, message]);
+    }), [density, fontColor, fontSize, message, repelThreshold]);
 
     const particleProps = useMemo(() => ['x', 'y', 'vx', 'vy', 'bx', 'by'], []);
 
@@ -326,6 +331,24 @@ export function BackgroundEffects({
         hoverRef.current = false;
     }, []);
 
+    const handleTouchStart = useCallback((event: TouchEvent) => {
+        hoverRef.current = true;
+        const touch = event.touches[0];
+        userxRef.current = touch.clientX;
+        useryRef.current = touch.clientY;
+    }, []);
+
+    const handleTouchMove = useCallback((event: TouchEvent) => {
+        hoverRef.current = true;
+        const touch = event.touches[0];
+        userxRef.current = touch.clientX;
+        useryRef.current = touch.clientY;
+    }, []);
+
+    const handleTouchEnd = useCallback(() => {
+        hoverRef.current = false;
+    }, []);
+
     const handleResize = useCallback(() => {
         setup();
     }, []);
@@ -333,6 +356,9 @@ export function BackgroundEffects({
     // Сохраняем обработчики событий в refs
     handleMouseMoveRef.current = handleMouseMove;
     handleMouseOutRef.current = handleMouseOut;
+    handleTouchStartRef.current = handleTouchStart;
+    handleTouchMoveRef.current = handleTouchMove;
+    handleTouchEndRef.current = handleTouchEnd;
     handleResizeRef.current = handleResize;
 
     useEffect(() => {
@@ -356,6 +382,9 @@ export function BackgroundEffects({
         window.addEventListener('resize', handleResizeRef.current!);
         window.addEventListener('mousemove', handleMouseMoveRef.current!);
         window.addEventListener('mouseout', handleMouseOutRef.current!);
+        window.addEventListener('touchstart', handleTouchStartRef.current!);
+        window.addEventListener('touchmove', handleTouchMoveRef.current!);
+        window.addEventListener('touchend', handleTouchEndRef.current!);
 
         return () => {
             if (animationRef.current) {
@@ -364,6 +393,9 @@ export function BackgroundEffects({
             window.removeEventListener('resize', handleResizeRef.current!);
             window.removeEventListener('mousemove', handleMouseMoveRef.current!);
             window.removeEventListener('mouseout', handleMouseOutRef.current!);
+            window.removeEventListener('touchstart', handleTouchStartRef.current!);
+            window.removeEventListener('touchmove', handleTouchMoveRef.current!);
+            window.removeEventListener('touchend', handleTouchEndRef.current!);
         };
     }, [isMounted]);
 
@@ -376,6 +408,7 @@ export function BackgroundEffects({
                 width: '100%',
                 height: '100%',
                 pointerEvents: 'none',
+                touchAction: 'auto', // Разрешаем скролл для контейнера
             }}
         >
             <canvas
@@ -387,6 +420,7 @@ export function BackgroundEffects({
                     width: '100%',
                     height: '100%',
                     pointerEvents: 'none',
+                    touchAction: 'none', // Отключаем touch действия для canvas
                     backgroundColor: 'rgba(1, 27, 35, 1)'
                 }}
             />

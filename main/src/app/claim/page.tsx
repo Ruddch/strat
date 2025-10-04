@@ -3,6 +3,7 @@
 import { useAccount } from "wagmi";
 import { ConnectKitButton } from "connectkit";
 import dynamic from "next/dynamic";
+import { OrientationLock } from "@/components/ui/OrientationLock";
 
 const ResponsiveBackgroundEffects = dynamic(() => import("@/components/ui/ResponsiveBackgroundEffects").then(mod => ({ default: mod.ResponsiveBackgroundEffects })), { 
   ssr: false 
@@ -52,9 +53,10 @@ export default function ClaimPage() {
   const { address } = useAccount();
 
   return (
-    <div className="ml-0 mr-0 lg:ml-64 lg:mr-64 font-[family-name:var(--font-avenue-mono)] h-screen no-scrollbar overflow-y-scroll snap-y snap-mandatory">
+    <OrientationLock>
+      <div className="ml-0 mr-0 lg:ml-64 lg:mr-64 font-[family-name:var(--font-avenue-mono)] h-screen no-scrollbar overflow-y-scroll snap-y snap-mandatory">
       <div id="claim" className="relative grid grid-rows-[1fr_auto] min-h-screen snap-start">
-        <ResponsiveBackgroundEffects message="CLAIM" mobileFontSize={50} desktopFontSize={200} />
+        <ResponsiveBackgroundEffects message="CLAIM" mobileFontSize={80} desktopFontSize={200} />
         <main className="relative flex flex-col justify-between h-full z-10 text-white">
           {/* Top Section - Metrics */}
           <div className="flex justify-between w-full border-b border-[var(--color-border-accent)]">
@@ -183,5 +185,6 @@ export default function ClaimPage() {
         </main>
       </div>
     </div>
+    </OrientationLock>
   );
 }
