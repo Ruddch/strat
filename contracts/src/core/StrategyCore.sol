@@ -45,7 +45,7 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
     
     // Core addresses
     address public immutable penguAddress;
-    address public immutable feeCollector;
+    address public feeCollector;
     IUniswapV2Router02 public router;
     address public buybackManager;
     
@@ -118,6 +118,7 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
     error InsufficientBalance();
     error PriceStale(uint256 age, uint256 threshold);
     error PriceOutOfBounds(uint256 price, uint256 min, uint256 max);
+    event FeeCollectorUpdated(address indexed oldFeeCollector, address indexed newFeeCollector);
     
     // ==================== MODIFIERS ====================
     
@@ -578,6 +579,17 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
     function setBuybackManager(address newBuybackManager) external onlyOwner {
         if (newBuybackManager == address(0)) revert ZeroAddress();
         buybackManager = newBuybackManager;
+    }
+
+    /**
+     * @notice Update fee collector address
+     * @param newFeeCollector New fee collector address
+     */
+    function setFeeCollector(address newFeeCollector) external onlyOwner {
+        if (newFeeCollector == address(0)) revert ZeroAddress();
+        address oldFeeCollector = feeCollector;
+        feeCollector = newFeeCollector;
+        emit FeeCollectorUpdated(oldFeeCollector, newFeeCollector);
     }
     
     /**

@@ -212,29 +212,21 @@ contract FeeCollector is Ownable, ReentrancyGuard {
 
         // Send to StrategyCore with eth spent info
         if (toStrategy > 0) {
-            try pengu.transfer(address(strategyCore), toStrategy) {
-                try strategyCore.depositPengu(toStrategy, (ethSpent * STRATEGY_RATIO) / BPS_DENOM) {
-                    // Success
-                } catch {
-                    // StrategyCore deposit failed but tokens already transferred
-                    revert("StrategyCore deposit failed");
-                }
+            require(pengu.approve(address(strategyCore), toStrategy), "Approve failed");
+            
+            try strategyCore.depositPengu(toStrategy, (ethSpent * STRATEGY_RATIO) / BPS_DENOM) {
             } catch {
-                revert TransferFailed();
+                revert("StrategyCore deposit failed");
             }
         }
-
         // Send to Treasury
         if (toTreasury > 0) {
-            try pengu.transfer(address(treasury), toTreasury) {
-                try treasury.depositPengu(toTreasury) {
-                    // Success
-                } catch {
-                    // Treasury deposit failed but tokens already transferred
-                    revert("Treasury deposit failed");
-                }
+            require(pengu.approve(address(treasury), toTreasury), "Approve failed");
+            
+            try treasury.depositPengu(toTreasury) {
+                // Success
             } catch {
-                revert TransferFailed();
+                revert("Treasury deposit failed");  
             }
         }
     }
