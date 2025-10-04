@@ -1,4 +1,4 @@
-# 🐧 PENGU Strategy Documentation
+# Main
 
 Welcome to the **PENGU Strategy** documentation — a decentralized token model built on the **Abstract** blockchain.
 

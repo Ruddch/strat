@@ -4,7 +4,7 @@ title: PENGU Strategy
 sidebar_label: Overview
 ---
 
-# 🐧 PENGU Strategy Documentation
+# 🐧 PENGU Strategy
 
 ---
 
