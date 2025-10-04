@@ -55,6 +55,16 @@ export function Navigation() {
                 Take Profit
               </button>
               <button 
+                onClick={() => scrollToSection('last-buys')}
+                className={`block text-[14px] font-light leading-[150%] tracking-[0%] font-[family-name:var(--font-martian-mono)] hover:opacity-80 transition-opacity cursor-pointer ${
+                  activeSection === 'last-buys' 
+                    ? 'text-[var(--color-text-accent)]' 
+                    : 'text-white'
+                }`}
+              >
+                Last Buys
+              </button>
+              <button 
                 onClick={() => scrollToSection('treasury')}
                 className={`block text-[14px] font-light leading-[150%] tracking-[0%] font-[family-name:var(--font-martian-mono)] hover:opacity-80 transition-opacity cursor-pointer ${
                   activeSection === 'treasury' 

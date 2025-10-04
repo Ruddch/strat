@@ -4,6 +4,10 @@ import { useAccount } from "wagmi";
 import { ConnectKitButton } from "connectkit";
 import dynamic from "next/dynamic";
 import { OrientationLock } from "@/components/ui/OrientationLock";
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useBlockNumber } from "wagmi";
+import { contractConfig, formatTokenBalance } from "@/lib/contracts";
+import { getRecentClaims } from "@/lib/contracts/events";
+import React from "react";
 
 const ResponsiveBackgroundEffects = dynamic(() => import("@/components/ui/ResponsiveBackgroundEffects").then(mod => ({ default: mod.ResponsiveBackgroundEffects })), { 
   ssr: false 
@@ -15,42 +19,199 @@ const truncateAddress = (address: string, startChars: number = 6, endChars: numb
   return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
 };
 
-// Mock data for payouts
-const payouts = [
-  {
-    id: 1,
-    walletAddress: "0x1234567890abcdef1234567890abcdef12345678",
-    amount: 1000,
-    date: "5.01.2025"
-  },
-  {
-    id: 2,
-    walletAddress: "0xabcdef1234567890abcdef1234567890abcdef12",
-    amount: 1000,
-    date: "5.01.2025"
-  },
-  {
-    id: 3,
-    walletAddress: "0x9876543210fedcba9876543210fedcba98765432",
-    amount: 1000,
-    date: "5.01.2025"
-  },
-  {
-    id: 4,
-    walletAddress: "0xfedcba9876543210fedcba9876543210fedcba98",
-    amount: 1000,
-    date: "5.01.2025"
-  },
-  {
-    id: 5,
-    walletAddress: "0x5555555555555555555555555555555555555555",
-    amount: 1000,
-    date: "5.01.2025"
+// Interface for claim data
+interface ClaimData {
+  id: number;
+  walletAddress: string;
+  amount: string;
+  date: string;
+  epochId: number;
+}
+
+// Function to generate fake Merkle proof
+const generateFakeMerkleProof = (userAddress: string, weightedBalance: bigint, claimAmount: bigint): `0x${string}`[] => {
+  // Generate fake proof hashes (in real implementation, these would come from Merkle tree)
+  const fakeProof: `0x${string}`[] = [
+    "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+    "0x9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba",
+    "0xfedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+  ];
+  
+  console.log(`Generated fake Merkle proof for user ${userAddress}, weightedBalance: ${weightedBalance}, claimAmount: ${claimAmount}`);
+  return fakeProof;
+};
+
+// Function to fetch Merkle proof from fake backend
+const fetchMerkleProof = async (userAddress: string, epochId: bigint, weightedBalance: bigint, claimAmount: bigint): Promise<`0x${string}`[]> => {
+  try {
+    // Call the API endpoint
+    const response = await fetch(`/api/merkle-proof?user=${userAddress}&epoch=${epochId}&weightedBalance=${weightedBalance}&claimAmount=${claimAmount}`);
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to generate Merkle proof');
+    }
+    
+    console.log('API response:', data);
+    return data.proof;
+    
+  } catch (error) {
+    console.error('Error fetching Merkle proof from API:', error);
+    // Fallback to local fake proof generation
+    console.log('Falling back to local fake proof generation');
+    return generateFakeMerkleProof(userAddress, weightedBalance, claimAmount);
   }
-];
+};
+
 
 export default function ClaimPage() {
   const { address } = useAccount();
+  const { data: blockNumber } = useBlockNumber();
+
+  // Get user's total claimed dividends
+  const { data: userClaimedDividends, isLoading: isClaimedLoading } = useReadContract({
+    ...contractConfig.treasury,
+    functionName: 'getUserTotalClaimedDividends',
+    args: address ? [address] : undefined,
+    query: {
+      refetchInterval: 30000, // 30 seconds
+      enabled: !!address, // Only fetch if wallet is connected
+    },
+  });
+
+  // Get user's current epoch dividends
+  const { data: userCurrentEpochDividends, isLoading: isCurrentEpochLoading } = useReadContract({
+    ...contractConfig.treasury,
+    functionName: 'getUserCurrentEpochDividends',
+    args: address ? [address] : undefined,
+    query: {
+      refetchInterval: 30000, // 30 seconds
+      enabled: !!address, // Only fetch if wallet is connected
+    },
+  });
+
+  // Get user's claimable info
+  const { data: claimableInfo } = useReadContract({
+    ...contractConfig.treasury,
+    functionName: 'getUserClaimableInfo',
+    args: address ? [address] : undefined,
+    query: {
+      refetchInterval: 30000, // 30 seconds
+      enabled: !!address, // Only fetch if wallet is connected
+    },
+  });
+
+  // Write contract for claiming
+  const { writeContract, data: hash, isPending } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    hash,
+  });
+
+  // Track initial loading state
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = React.useState(false);
+  const [hasCurrentEpochLoaded, setHasCurrentEpochLoaded] = React.useState(false);
+  const [isFetchingProof, setIsFetchingProof] = React.useState(false);
+  const [recentClaims, setRecentClaims] = React.useState<ClaimData[]>([]);
+  const [isLoadingClaims, setIsLoadingClaims] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isClaimedLoading && userClaimedDividends !== undefined) {
+      setHasInitiallyLoaded(true);
+    }
+  }, [isClaimedLoading, userClaimedDividends]);
+
+  React.useEffect(() => {
+    if (!isCurrentEpochLoading && userCurrentEpochDividends !== undefined) {
+      setHasCurrentEpochLoaded(true);
+    }
+  }, [isCurrentEpochLoading, userCurrentEpochDividends]);
+
+  // Function to fetch recent claims from contract events
+  const fetchRecentClaims = async () => {
+    if (!blockNumber) return;
+    
+    setIsLoadingClaims(true);
+    try {
+      // Fetch real events from contract
+      const claimEvents = await getRecentClaims(1000); // Last 1000 blocks
+      
+      // Convert events to display format
+      const claims: ClaimData[] = claimEvents.slice(0, 10).map((event, index) => ({
+        id: index + 1,
+        walletAddress: event.user,
+        amount: formatTokenBalance(event.amount),
+        date: new Date(event.timestamp * 1000).toLocaleDateString('en-GB'),
+        epochId: Number(event.epochId)
+      }));
+      
+      setRecentClaims(claims);
+      console.log('Fetched real claim events:', claims);
+      
+    } catch (error) {
+      console.error('Error fetching recent claims:', error);
+      // Set empty array on error
+      setRecentClaims([]);
+    } finally {
+      setIsLoadingClaims(false);
+    }
+  };
+
+  // Fetch recent claims when block number changes
+  React.useEffect(() => {
+    if (blockNumber) {
+      fetchRecentClaims();
+    }
+  }, [blockNumber]);
+
+  // Handle claim function
+  const handleClaim = async () => {
+    console.log(claimableInfo, address);
+    if (!claimableInfo || !address) return;
+    
+    const [canClaim, claimableAmount, epochId] = claimableInfo as [boolean, bigint, bigint];
+    
+    if (!canClaim || claimableAmount === BigInt(0)) {
+      alert('No dividends available to claim');
+      return;
+    }
+
+    try {
+      setIsFetchingProof(true);
+      
+      // Fetch Merkle proof from fake backend
+      const merkleProof = await fetchMerkleProof(
+        address,
+        epochId,
+        claimableAmount, // weightedBalance
+        claimableAmount  // claimAmount
+      );
+      
+      console.log('Fetched Merkle proof:', merkleProof);
+      
+      // Now call the contract with the proof
+      writeContract({
+        ...contractConfig.treasury,
+        functionName: 'claimDividends',
+        args: [
+          epochId,
+          claimableAmount, // weightedBalance
+          claimableAmount, // claimAmount
+          merkleProof as `0x${string}`[] // merkleProof from backend
+        ],
+      });
+    } catch (err) {
+      console.error('Claim failed:', err);
+      alert('Claim failed. Please try again.');
+    } finally {
+      setIsFetchingProof(false);
+    }
+  };
 
   return (
     <OrientationLock>
@@ -65,7 +226,7 @@ export default function ClaimPage() {
                 Total claimed dividends
               </p>
               <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
-                5 587
+                {!address ? '!$%?*' : !hasInitiallyLoaded ? '!$%?*' : userClaimedDividends ? formatTokenBalance(userClaimedDividends) : '0'}
               </p>
             </div>
             <div className="flex-1 text-center pb-7 pt-13">
@@ -73,7 +234,7 @@ export default function ClaimPage() {
                 This week<br className="lg:hidden" /> dividends
               </p>
               <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
-                6 847
+                {!address ? ',&^_#' : !hasCurrentEpochLoaded ? ',&^_#' : userCurrentEpochDividends ? formatTokenBalance(userCurrentEpochDividends) : '0'}
               </p>
             </div>
           </div>
@@ -101,7 +262,7 @@ export default function ClaimPage() {
                 {({ isConnected, isConnecting, show }) => {
                   return (
                     <button 
-                      onClick={isConnected ? () => console.log('Claim clicked') : show}
+                      onClick={isConnected ? handleClaim : show}
                       className="w-full px-2 py-6 flex items-center justify-center transition-colors hover:opacity-80 cursor-pointer"
                       style={{
                         backgroundColor: 'rgba(96, 255, 255, 0.12)',
@@ -113,6 +274,12 @@ export default function ClaimPage() {
                       >
                         {isConnecting ? (
                           <div className="animate-spin w-4 h-4 lg:w-8 lg:h-8 border-2 border-current border-t-transparent rounded-full" />
+                        ) : isFetchingProof ? (
+                          'FETCHING PROOF...'
+                        ) : isPending || isConfirming ? (
+                          <div className="animate-spin w-4 h-4 lg:w-8 lg:h-8 border-2 border-current border-t-transparent rounded-full" />
+                        ) : isSuccess ? (
+                          'CLAIMED!'
                         ) : (
                           isConnected ? 'CLAIM' : 'CONNECT WALLET'
                         )}
@@ -148,33 +315,45 @@ export default function ClaimPage() {
                </div>
                  
                  {/* Table Rows */}
-                 {payouts.map((payout, index) => (
-                   <div key={payout.id} className={`flex w-full ${index % 2 === 1 ? 'bg-[rgba(96,255,255,0.05)]' : ''}`}>
-                     <div className="flex-1 flex items-center text-left p-2 py-5 border-b border-[var(--color-border-accent)]">
-                        <span className="text-sm font-light leading-[150%] tracking-[0%] text-white font-[family-name:var(--font-martian-mono)]"
-                        >
-                         {truncateAddress(payout.walletAddress)}
-                       </span>
-                     </div>
-                     <div className="flex-1 border-l p-2 py-5 border-b border-[var(--color-border-accent)]">
-                       <div className="flex items-center justify-between gap-2">
-                         <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
-                           {payout.amount}
+                 {isLoadingClaims ? (
+                   <div className="flex w-full justify-center p-8 border-b border-[var(--color-border-accent)]">
+                     <div className="animate-spin w-6 h-6 border-2 border-current border-t-transparent rounded-full" />
+                   </div>
+                 ) : recentClaims.length > 0 ? (
+                   recentClaims.map((claim, index) => (
+                     <div key={claim.id} className={`flex w-full ${index % 2 === 1 ? 'bg-[rgba(96,255,255,0.05)]' : ''}`}>
+                       <div className="flex-1 flex items-center text-left p-2 py-5 border-b border-[var(--color-border-accent)]">
+                          <span className="text-sm font-light leading-[150%] tracking-[0%] text-white font-[family-name:var(--font-martian-mono)]"
+                          >
+                           {truncateAddress(claim.walletAddress)}
                          </span>
-                           <span className="text-sm font-light leading-[150%] tracking-[0%] text-white font-[family-name:var(--font-martian-mono)]"
+                       </div>
+                       <div className="flex-1 border-l p-2 py-5 border-b border-[var(--color-border-accent)]">
+                         <div className="flex items-center justify-between gap-2">
+                           <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
+                             {claim.amount}
+                           </span>
+                             <span className="text-sm font-light leading-[150%] tracking-[0%] text-white font-[family-name:var(--font-martian-mono)]"
+                             >
+                             PENGU
+                           </span>
+                         </div>
+                       </div>
+                       <div className="flex-1 flex items-center p-2 py-5 border-l border-b border-[var(--color-border-accent)]">
+                         <span className="text-sm font-light leading-[150%] tracking-[0%] text-white font-[family-name:var(--font-martian-mono)]"
                            >
-                           PENGU
+                           {claim.date}
                          </span>
                        </div>
                      </div>
-                     <div className="flex-1 flex items-center p-2 py-5 border-l border-b border-[var(--color-border-accent)]">
-                       <span className="text-sm font-light leading-[150%] tracking-[0%] text-white font-[family-name:var(--font-martian-mono)]"
-                         >
-                         {payout.date}
-                       </span>
-                     </div>
+                   ))
+                 ) : (
+                   <div className="flex w-full justify-center p-8 border-b border-[var(--color-border-accent)]">
+                     <span className="text-sm text-gray-400 font-[family-name:var(--font-martian-mono)]">
+                       No recent claims found
+                     </span>
                    </div>
-                 ))}
+                 )}
              </div>
           <div className="flex-1 flex items-center justify-center">
             <div className="flex-1 h-full min-h-[100px] p-2"></div>

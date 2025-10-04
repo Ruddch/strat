@@ -142,7 +142,6 @@ export function BackgroundEffects({
 
     const setup = useCallback(() => {
         if (typeof window === 'undefined' || !canvasRef.current || !bufferRef.current || !ctxRef.current) {
-            console.log('BackgroundEffects setup failed: missing refs');
             return;
         }
 
@@ -152,8 +151,6 @@ export function BackgroundEffects({
 
         const width = window.innerWidth;
         const height = window.innerHeight;
-        
-        console.log('BackgroundEffects setup:', { width, height, message: options.text.message });
         
         canvas.width = width;
         canvas.height = height;
@@ -197,7 +194,6 @@ export function BackgroundEffects({
                 }
             }
 
-            console.log('BackgroundEffects particles created:', pixels.length / particleProps.length);
             particlesRef.current = new PropsArray(pixels.length / particleProps.length, particleProps);
             particlesRef.current.set(pixels, 0);
             imageBufferRef.current = buffer.createImageData(width, height);
@@ -366,7 +362,6 @@ export function BackgroundEffects({
     }, []);
 
     useEffect(() => {
-        console.log('BackgroundEffects useEffect');
         if (!isMounted || typeof window === 'undefined') return;
 
         if (canvasRef.current && !isInitializedRef.current) {
