@@ -243,17 +243,77 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
         whenNotPaused 
         nonReentrant 
     {
-        if (amountPengu == 0) revert ZeroAmount();
-        if (ethSpent == 0) revert ZeroAmount();
-        
-        // Transfer PENGU tokens from FeeCollector
-        require(
-            IERC20(penguAddress).transferFrom(msg.sender, address(this), amountPengu),
-            "Transfer failed"
+        // Debug: Log all input parameters and sender state
+        emit DebugDeposit(
+            amountPengu, 
+            ethSpent, 
+            msg.sender, 
+            IERC20(penguAddress).balanceOf(msg.sender), 
+            IERC20(penguAddress).allowance(msg.sender, address(this)),
+            block.timestamp
         );
+        
+        // Check zero amounts with debug
+        if (amountPengu == 0) {
+            emit DebugMessage("ERROR: amountPengu is zero");
+            revert ZeroAmount();
+        }
+        if (ethSpent == 0) {
+            emit DebugMessage("ERROR: ethSpent is zero");
+            revert ZeroAmount();
+        }
+        
+        emit DebugMessage("INFO: Zero amount checks passed");
+        
+        // Debug before transfer
+        IERC20 penguToken = IERC20(penguAddress);
+        uint256 balanceBefore = penguToken.balanceOf(address(this));
+        uint256 senderBalance = penguToken.balanceOf(msg.sender);
+        uint256 allowanceAmount = penguToken.allowance(msg.sender, address(this));
+        
+        emit DebugTransfer(balanceBefore, senderBalance, allowanceAmount, amountPengu);
+        
+        if (senderBalance < amountPengu) {
+            emit DebugMessage("ERROR: Sender has insufficient PENGU balance");
+            revert("Insufficient balance");
+        }
+        
+        if (allowanceAmount < amountPengu) {
+            emit DebugMessage("ERROR: Insufficient allowance for transfer");
+            revert("Insufficient allowance");
+        }
+        
+        emit DebugMessage("INFO: Balance and allowance checks passed");
+        
+        // Attempt transfer with detailed error handling
+        try penguToken.transferFrom(msg.sender, address(this), amountPengu) returns (bool success) {
+            if (!success) {
+                emit DebugMessage("ERROR: transferFrom returned false");
+                revert("Transfer failed");
+            }
+            emit DebugMessage("INFO: transferFrom successful");
+        } catch Error(string memory reason) {
+            emit DebugMessage(string.concat("ERROR: transferFrom failed with reason: ", reason));
+            revert("Transfer failed");
+        } catch (bytes memory lowLevelData) {
+            emit DebugMessage("ERROR: transferFrom failed with low level error");
+            emit DebugBytes(lowLevelData);
+            revert("Transfer failed");
+        }
+        
+        // Verify transfer actually happened
+        uint256 balanceAfter = penguToken.balanceOf(address(this));
+        if (balanceAfter != balanceBefore + amountPengu) {
+            emit DebugMessage("ERROR: Transfer amount mismatch");
+            emit DebugTransferResult(balanceBefore, balanceAfter, amountPengu);
+            revert("Transfer amount mismatch");
+        }
+        
+        emit DebugMessage("INFO: Transfer verification passed");
         
         // Calculate average price
         uint256 avgPrice = (ethSpent * PRICE_PRECISION) / amountPengu;
+        emit DebugPrice(ethSpent, PRICE_PRECISION, amountPengu, avgPrice);
         
         // Create new lot
         lots[lotTail] = Lot({
@@ -264,13 +324,25 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
             active: true
         });
         
+        emit DebugMessage("INFO: Lot created successfully");
+        
         // Update counters
         uint256 lotId = lotTail;
         lotTail++;
         activeLotCount++;
         
+        emit DebugMessage("INFO: Counters updated successfully");
         emit PenguDeposited(lotId, amountPengu, ethSpent, avgPrice);
+        emit DebugMessage("INFO: depositPengu completed successfully");
     }
+
+    // Debug events
+    event DebugDeposit(uint256 amount, uint256 ethSpent, address sender, uint256 balance, uint256 allowance, uint256 timestamp);
+    event DebugMessage(string message);
+    event DebugTransfer(uint256 balanceBefore, uint256 senderBalance, uint256 allowance, uint256 requestedAmount);
+    event DebugTransferResult(uint256 balanceBefore, uint256 balanceAfter, uint256 expectedIncrease);
+    event DebugPrice(uint256 ethSpent, uint256 precision, uint256 amountPengu, uint256 avgPrice);
+    event DebugBytes(bytes data);
     
     /**
      * @notice Set take profit ladder configuration
