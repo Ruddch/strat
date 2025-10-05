@@ -21,10 +21,10 @@ This documentation provides an overview of the protocol’s design, tokenomics, 
 ## Summary
 
 PENGU Strategy establishes a **self-sustaining on-chain economy**, where:
-- Trading generates liquidity,
-- Liquidity funds $PENGU buybacks,
-- Profits fuel token burns,
-- And holders receive ongoing rewards.
+- Trading generates liquidity
+- Liquidity funds $PENGU buybacks
+- Profits fuel token burns
+- And holders receive ongoing rewards
 
 > Every transaction strengthens $PENGU and rewards those who stay in the ecosystem.
 
