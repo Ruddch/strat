@@ -4,23 +4,24 @@ title: Tokenomics
 sidebar_label: Tokenomics
 ---
 
-# 💹 Tokenomics 
+# Tokenomics 
 
 ---
 
-## 💰 Transaction Breakdown
+## Transaction Breakdown
 
 Every trade of **PENGU Strategy (PST)** triggers a **10% transaction fee**.  
 This mechanism funds all on-chain operations — from buybacks to rewards.
 
 | Allocation | Percentage | Description |
 |-------------|-------------|--------------|
-| **Team & Development** | **2%** | Supports protocol development, upgrades, and infrastructure costs. |
+| **Team & Development** | **1.5%** | Supports protocol development, upgrades, and infrastructure costs. |
+| **$INVEST Buybacks** | **0.5%** | Dedicated to supporting the $INVEST community through token buybacks, strengthening the broader ecosystem. |
 | **Treasury Pool** | **8%** | Main operational pool used for $PENGU buybacks, resales, and reward distribution. |
 
 ---
 
-## 🏦 Treasury Composition
+## Treasury Composition
 
 The Treasury (8%) is divided into two sub-pools:
 
@@ -31,7 +32,7 @@ The Treasury (8%) is divided into two sub-pools:
 
 ---
 
-## 🔁 Economic Cycle
+## Economic Cycle
 
 1. **Trading** generates 10% fee → Treasury accumulates.  
 2. **Buyback Pool** uses 7% to purchase $PENGU from the Abstract DEX.  
@@ -42,7 +43,7 @@ The Treasury (8%) is divided into two sub-pools:
 
 ---
 
-## 📊 Key Parameters
+## Key Parameters
 
 | Parameter | Value |
 |------------|--------|
@@ -55,7 +56,7 @@ The Treasury (8%) is divided into two sub-pools:
 
 ---
 
-## 🔄 Flywheel Summary
+## Flywheel Summary
 
 > **Trade → Fee → Treasury → $PENGU Buyback → Resale → PST Burn → Rewards → Repeat**
 

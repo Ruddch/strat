@@ -403,7 +403,8 @@ export function BackgroundEffects({
                 width: '100%',
                 height: '100%',
                 pointerEvents: 'none',
-                touchAction: 'auto', // Разрешаем скролл для контейнера
+                touchAction: 'auto', 
+                zIndex: 1000
             }}
         >
             <canvas
@@ -415,7 +416,7 @@ export function BackgroundEffects({
                     width: '100%',
                     height: '100%',
                     pointerEvents: 'none',
-                    touchAction: 'none', // Отключаем touch действия для canvas
+                    touchAction: 'none', 
                     backgroundColor: 'rgba(1, 27, 35, 1)'
                 }}
             />
@@ -426,7 +427,6 @@ export function BackgroundEffects({
                     left: 0,
                     width: '100%',
                     height: '100%',
-                    // backgroundColor: 'rgba(0, 152, 202, 0.2)',
                     pointerEvents: 'none'
                 }}
             />

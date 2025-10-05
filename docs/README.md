@@ -1,12 +1,14 @@
-# Main
+# Pengu Strategy
 
-Welcome to the **PENGU Strategy** documentation — a decentralized token model built on the **Abstract** blockchain.
+![Teaser](./teaser.gif)
+
+Welcome to the **PENGU Strategy** — The Perpetual Pengu Machine on the **Abstract** blockchain.
 
 This documentation provides an overview of the protocol’s design, tokenomics, and reward mechanics.
 
 ---
 
-## 📚 Sections
+## Sections
 
 - [Overview](./pengu-strategy.md)  
   Introduction to PENGU Strategy — how it works, its core mechanisms, and the logic behind the automated $PENGU buyback cycle.
@@ -16,7 +18,7 @@ This documentation provides an overview of the protocol’s design, tokenomics, 
 
 ---
 
-## 💡 Summary
+## Summary
 
 PENGU Strategy establishes a **self-sustaining on-chain economy**, where:
 - Trading generates liquidity,
@@ -30,7 +32,6 @@ PENGU Strategy establishes a **self-sustaining on-chain economy**, where:
 
 ## 🔗 Useful Links
 
-- 🌐 [Abstract Blockchain](https://abstractlabs.xyz)
-- 🔍 [Abscan Explorer](https://abscan.org)
-- 💬 [Community Discord](https://discord.gg/pengu)
-- 🐦 [Twitter / X](https://x.com/pengustrategy)
+- [Site](https://ruddch.github.io/strat/)
+- [Dex](https://abstractlabs.xyz)
+- [Twitter / X](https://x.com/PudgyInvest)
