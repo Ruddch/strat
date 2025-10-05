@@ -78,7 +78,7 @@ const LastBuysTable: React.FC = () => {
               </div>
               <div className="flex-1 p-2 pb-8 pt-8 border-l border-b border-[var(--color-border-accent)]">
                 <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-[#00FF00] font-[family-name:var(--font-random-grotesque)]">
-                  {predictedGain.toFixed(2)}$
+                  ${predictedGain.toFixed(2)}
                 </span>
               </div>
             </div>
