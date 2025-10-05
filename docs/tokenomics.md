@@ -37,10 +37,10 @@ The Treasury (8%) is divided into two sub-pools:
 ## Economic Cycle
 
 1. **Trading** generates 10% fee → Treasury accumulates.  
-2. **Buyback Pool** uses 7% to purchase $PENGU from the Abstract DEX.  
+2. **Buyback Pool** uses 5.6% to purchase $PENGU from the Abstract DEX.  
 3. **Resale with 20% markup** generates profit.  
 4. **Proceeds** are used to **buy back and burn PST tokens**.  
-5. **Rewards Pool** distributes 1% in $PENGU to loyal holders.  
+5. **Rewards Pool** distributes 2.4% in $PENGU to loyal holders.  
 6. The cycle restarts — **continuous, deflationary, and automated.**
 
 ---
