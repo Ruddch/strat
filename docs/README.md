@@ -20,7 +20,7 @@ This documentation provides an overview of the protocol’s design, tokenomics, 
 
 ## Summary
 
-PENGU Strategy establishes a **self-sustaining on-chain economy**, where:
+Pengu Strategy establishes a **self-sustaining on-chain economy**, where:
 - Trading generates liquidity
 - Liquidity funds $PENGU buybacks
 - Profits fuel token burns
