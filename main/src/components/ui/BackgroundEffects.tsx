@@ -404,7 +404,6 @@ export function BackgroundEffects({
                 height: '100%',
                 pointerEvents: 'none',
                 touchAction: 'auto', 
-                zIndex: 1000
             }}
         >
             <canvas
