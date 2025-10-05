@@ -68,7 +68,7 @@ These limits apply to all market transactions and can be adjusted by the protoco
 
 ## Holder Rewards
 
-Every **epoch (7 days)**, rewards are distributed from the **1% Treasury pool** in **$PENGU**, according to:
+Every **epoch (7 days)**, rewards are distributed from the **2.4% Treasury pool** in **$PENGU**, according to:
 
 - **Holding duration:** the longer you hold, the higher your multiplier.  
 - **Holding amount:** larger holders receive proportionally greater rewards.
