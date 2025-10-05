@@ -33,6 +33,14 @@ const martianMono = Martian_Mono({
 export const metadata: Metadata = {
   title: "Pengu Strategy",
   description: "The Perpetual Pengu Machine",
+  icons: {
+    icon: [
+      { url: '/strat/favicon.ico', sizes: 'any' },
+      { url: '/strat/favicon.png', type: 'image/png' }
+    ],
+    shortcut: '/strat/favicon.ico',
+    apple: '/strat/favicon.png',
+  },
 };
 
 export const viewport: Viewport = {
@@ -62,6 +70,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/strat/favicon.ico" sizes="any" />
+        <link rel="icon" href="/strat/favicon.png" type="image/png" />
+        <link rel="shortcut icon" href="/strat/favicon.ico" />
+        <link rel="apple-touch-icon" href="/strat/favicon.png" />
+      </head>
       <NextAbstractWalletProvider>
         <ScrollProvider>
           <body
