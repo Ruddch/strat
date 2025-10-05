@@ -31,7 +31,6 @@ export function parseTokenAmount(amount: string, decimals: number = 18): bigint 
  */
 export function formatTokenPrice(price: bigint, decimals: number = 18): string {
   const priceStr = formatUnits(price, decimals);
-  testFormatTokenPrice()
   
   // Если число >= 0.0001, используем обычное форматирование
   if (parseFloat(priceStr) >= 0.0001) {
@@ -68,14 +67,6 @@ export function formatTokenPrice(price: bigint, decimals: number = 18): string {
 function getSubscript(num: number): string {
   const subscripts = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
   return num.toString().split('').map(digit => subscripts[parseInt(digit)]).join('');
-}
-
-// Временная функция для тестирования
-export function testFormatTokenPrice() {
-  const testPrice = BigInt(47928123144487);
-  console.log('Test price:', testPrice);
-  console.log('formatUnits result:', formatUnits(testPrice, 18));
-  console.log('formatTokenPrice result:', formatTokenPrice(testPrice, 18));
 }
 
 /**

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Geist, Geist_Mono, Oswald, Martian_Mono } from "next/font/google";
 import NextAbstractWalletProvider from "@/components/NextAbstractWalletProvider";
@@ -33,12 +33,13 @@ const martianMono = Martian_Mono({
 export const metadata: Metadata = {
   title: "Pengu Strategy",
   description: "The Perpetual Pengu Machine",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 // Abstract Fonts
