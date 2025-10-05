@@ -35,11 +35,12 @@ export const metadata: Metadata = {
   description: "The Perpetual Pengu Machine",
   icons: {
     icon: [
-      { url: '/strat/favicon.ico', sizes: 'any' },
-      { url: '/strat/favicon.png', type: 'image/png' }
+      // URL is set at runtime below in <head> for dynamic basePath
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.png', type: 'image/png' }
     ],
-    shortcut: '/strat/favicon.ico',
-    apple: '/strat/favicon.png',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.png',
   },
 };
 
@@ -68,13 +69,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const prefix = process.env.NEXT_PUBLIC_GH_PAGES === 'true' ? '/strat' : '';
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/strat/favicon.ico" sizes="any" />
-        <link rel="icon" href="/strat/favicon.png" type="image/png" />
-        <link rel="shortcut icon" href="/strat/favicon.ico" />
-        <link rel="apple-touch-icon" href="/strat/favicon.png" />
+        <link rel="icon" href={`${prefix}/favicon.ico`} sizes="any" />
+        <link rel="icon" href={`${prefix}/favicon.png`} type="image/png" />
+        <link rel="shortcut icon" href={`${prefix}/favicon.ico`} />
+        <link rel="apple-touch-icon" href={`${prefix}/favicon.png`} />
       </head>
       <NextAbstractWalletProvider>
         <ScrollProvider>
