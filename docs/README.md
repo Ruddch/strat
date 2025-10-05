@@ -1,6 +1,6 @@
 # Pengu Strategy
 
-![Teaser](./teaser.gif)
+![](./teaser.gif)
 
 Welcome to the **PENGU Strategy** — The Perpetual Pengu Machine on the **Abstract** blockchain.
 
