@@ -17,7 +17,7 @@ This mechanism funds all on-chain operations — from buybacks to rewards.
 |-------------|-------------|--------------|
 | **Team & Development** | **1.5%** | Supports protocol development, upgrades, and infrastructure costs. |
 | **$INVEST Buybacks** | **0.5%** | Dedicated to supporting the $INVEST community through token buybacks, strengthening the broader ecosystem. |
-| **Treasury Pool** | **8%** | Main operational pool used for $PENGU buybacks, resales, and reward distribution. |
+| **Treasury** | **8%** | Main operational pool used for $PENGU buybacks, resales, and reward distribution. |
 
 ---
 
@@ -27,8 +27,10 @@ The Treasury (8%) is divided into two sub-pools:
 
 | Pool | Allocation | Function |
 |------|-------------|-----------|
-| **Buyback Pool** | **7%** | Executes $PENGU buybacks and resale with 1.2× markup. |
-| **Rewards Pool** | **1%** | Pays out weekly holder rewards in $PENGU. |
+| **Buyback Pool** | **5.6%** | Executes $PENGU buybacks and resale with 1.2× markup. |
+| **Rewards Pool** | **2.4%** | Pays out weekly holder rewards in $PENGU. |
+
+> **Example:** With a $1M market cap, holding 1% of the supply, and $1M weekly trading volume, you'd earn ~$300 weekly rewards, translating to ~338% APY when compounded weekly.
 
 ---
 
@@ -48,7 +50,7 @@ The Treasury (8%) is divided into two sub-pools:
 | Parameter | Value |
 |------------|--------|
 | **Transaction Fee** | 10% |
-| **Treasury Split** | 7% Buyback / 1% Rewards |
+| **Treasury Split** | 5.6% Buyback / 2.4% Rewards |
 | **Resale Markup** | ×1.2 (20% profit) |
 | **Reward Epoch** | 7 days |
 | **Burn Mechanism** | Automatic buyback & burn of PST |

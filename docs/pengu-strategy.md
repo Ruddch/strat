@@ -27,7 +27,7 @@ Each **PENGU Strategy** token trade incurs a **10% transaction fee**, distribute
 |-------------|-------------|--------------|
 | **Team & Development** | **1.5%** | Used for protocol maintenance, development, and ecosystem operations. |
 | **$INVEST Buybacks** | **0.5%** | Dedicated to supporting the $INVEST community through token buybacks, strengthening the broader ecosystem. |
-| **Treasury Pool** | **8%** | Core vault used for $PENGU buybacks, resales, and holder rewards. |
+| **Treasury** | **8%** | Core vault used for $PENGU buybacks, resales, and holder rewards. |
 
 ---
 
@@ -37,8 +37,8 @@ Funds accumulated in the **Treasury (8%)** are automatically managed through sma
 
 | Allocation | Percentage | Purpose |
 |-------------|-------------|----------|
-| **7%** | Dedicated to **$PENGU buybacks** on the Abstract DEX. |
-| **1%** | Reserved for **weekly holder rewards**. |
+| **5.6%** | Dedicated to **$PENGU buybacks** on the Abstract DEX. |
+| **2.4%** | Reserved for **weekly holder rewards**. |
 
 ---
 
