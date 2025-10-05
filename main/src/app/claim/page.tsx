@@ -4,6 +4,7 @@ import { useAccount } from "wagmi";
 import { ConnectKitButton } from "connectkit";
 import dynamic from "next/dynamic";
 import { OrientationLock } from "@/components/ui/OrientationLock";
+import AnimatedValue from "@/components/ui/AnimatedValue";
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useBlockNumber } from "wagmi";
 import { contractConfig, formatTokenBalance } from "@/lib/contracts";
 import { getRecentClaims } from "@/lib/contracts/events";
@@ -122,13 +123,13 @@ export default function ClaimPage() {
 
   React.useEffect(() => {
     if (!isClaimedLoading && userClaimedDividends !== undefined) {
-      setHasInitiallyLoaded(true);
+      setHasInitiallyLoaded(false);
     }
   }, [isClaimedLoading, userClaimedDividends]);
 
   React.useEffect(() => {
     if (!isCurrentEpochLoading && userCurrentEpochDividends !== undefined) {
-      setHasCurrentEpochLoaded(true);
+      setHasCurrentEpochLoaded(false);
     }
   }, [isCurrentEpochLoading, userCurrentEpochDividends]);
 
@@ -226,7 +227,10 @@ export default function ClaimPage() {
                 Total claimed dividends
               </p>
               <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
-                {!address ? '!$%?*' : !hasInitiallyLoaded ? '!$%?*' : userClaimedDividends ? formatTokenBalance(userClaimedDividends) : '0'}
+                <AnimatedValue
+                  isLoading={!address || !hasInitiallyLoaded}
+                  value={userClaimedDividends ? formatTokenBalance(userClaimedDividends) : '0'}
+                />
               </p>
             </div>
             <div className="flex-1 text-center pb-7 pt-13">
@@ -234,7 +238,10 @@ export default function ClaimPage() {
                 This week<br className="lg:hidden" /> dividends
               </p>
               <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
-                {!address ? ',&^_#' : !hasCurrentEpochLoaded ? ',&^_#' : userCurrentEpochDividends ? formatTokenBalance(userCurrentEpochDividends) : '0'}
+                <AnimatedValue
+                  isLoading={!address || !hasCurrentEpochLoaded}
+                  value={userCurrentEpochDividends ? formatTokenBalance(userCurrentEpochDividends) : '0'}
+                />
               </p>
             </div>
           </div>
@@ -251,7 +258,7 @@ export default function ClaimPage() {
             <div className={`${address ? 'w-1/2' : 'w-1/4'}`}>
               <div className="space-y-2">
                 <p className="text-sm p-2 text-white font-[family-name:var(--font-martian-mono)]">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                  
                 </p>
               </div>
             </div>

@@ -10,7 +10,7 @@ const TakeProfitTable: React.FC = () => {
   return (
     <div>
       <h2 className="pt-13 lg:pt-11 pb-11 pl-2 pr-2 border-b border-t border-[var(--color-border-accent)] text-[36px] lg:text-[72px] font-normal leading-[100%] tracking-[0%] text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
-        Take Profit
+        Closest Orders
       </h2>
       
       {/* Take Profit Table */}

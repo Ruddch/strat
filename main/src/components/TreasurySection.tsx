@@ -16,7 +16,7 @@ const TreasurySection: React.FC = () => {
   });
 
   // Get total claimed dividends across all epochs
-  const { data: totalClaimed } = useReadContract({
+  const { data: totalClaimed, isLoading: isTotalClaimedLoading } = useReadContract({
     ...contractConfig.treasury,
     functionName: 'getTotalClaimedDividends',
     query: {
@@ -26,12 +26,19 @@ const TreasurySection: React.FC = () => {
 
   // Track loading states
   const [hasTreasuryLoaded, setHasTreasuryLoaded] = React.useState(false);
+  const [hasTotalClaimedLoaded, setHasTotalClaimedLoaded] = React.useState(false);
 
   useEffect(() => {
     if (!isTreasuryLoading && treasuryBalance !== undefined) {
-      setHasTreasuryLoaded(true);
+      setHasTreasuryLoaded(false);
     }
   }, [isTreasuryLoading, treasuryBalance]);
+
+  useEffect(() => {
+    if (!isTotalClaimedLoading && totalClaimed !== undefined) {
+      setHasTotalClaimedLoaded(false);
+    }
+  }, [isTotalClaimedLoading, totalClaimed]);
 
   return (
     <div>
@@ -61,7 +68,7 @@ const TreasurySection: React.FC = () => {
           </p>
           <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
             <AnimatedValue
-              isLoading={!hasTreasuryLoaded}
+              isLoading={!hasTotalClaimedLoaded}
               value={totalClaimed ? formatTokenBalance(totalClaimed) : '0'}
             />
           </p>

@@ -100,7 +100,7 @@ export default function Home() {
       <div className="ml-0 mr-0 lg:ml-64 lg:mr-64 font-[family-name:var(--font-avenue-mono)] h-screen no-scrollbar overflow-y-scroll snap-y snap-mandatory">
       {/* First Section - Original Dashboard */}
       <div id="live" ref={containerRef} className="relative grid grid-rows-[1fr_auto] min-h-screen snap-start">
-        <ResponsiveBackgroundEffects mobileFontSize={30} desktopFontSize={200} />
+        <ResponsiveBackgroundEffects message="LAUNCH SOON" mobileFontSize={30} desktopFontSize={200} />
         <main className="relative flex flex-col justify-between w-full h-full z-10 text-white">
           {/* Top Section - Metrics */}
           <MetricsSection />
