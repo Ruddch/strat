@@ -64,21 +64,6 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
 
     // ====== Events ======
     event FeeTaken(uint256 amount, address from);
-    event ImmediateSwapResult(
-        bool success,
-        uint256 tokensIn,
-        uint256 ethOut,
-        uint256 toOps,
-        uint256 toCollector
-    );
-    event SwapDebug(
-        string step,
-        uint256 amount,
-        uint256 balance,
-        address pair,
-        uint256 ethOut,
-        bool success
-    );
     event SwapBackExecuted(
         uint256 tokensSold,
         uint256 ethReceived,
@@ -227,208 +212,61 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         }
     }
 
+    /**
+     * @dev Attempts to immediately swap tokens for ETH and distribute
+     * @param amount Amount of tokens to swap
+     */
     function _tryImmediateSwap(uint256 amount) private {
-        emit SwapDebug(
-            "START",
-            amount,
-            balanceOf(address(this)),
-            pair,
-            0,
-            false
-        );
-
         if (pair == address(0)) {
-            emit SwapDebug(
-                "ERROR_NO_PAIR",
-                amount,
-                balanceOf(address(this)),
-                pair,
-                0,
-                false
-            );
             return;
         }
-
-        uint256 contractBalance = balanceOf(address(this));
-        if (contractBalance < amount) {
-            emit SwapDebug(
-                "ERROR_INSUFFICIENT_BALANCE",
-                amount,
-                contractBalance,
-                pair,
-                0,
-                false
-            );
+        
+        if (balanceOf(address(this)) < amount) {
             return;
         }
-
-        bool swapSuccess = false;
-        uint256 ethReceived = 0;
-        uint256 toOps = 0;
-        uint256 toCollector = 0;
-
+        
         uint256 ethOut = _internalSwap(amount);
-        emit SwapDebug(
-            "INTERNAL_SWAP_RESULT",
-            amount,
-            contractBalance,
-            pair,
-            ethOut,
-            ethOut > 0
-        );
-
+        
         if (ethOut > 0) {
-            ethReceived = ethOut;
-            swapSuccess = true;
-            toOps = (ethReceived * OPS_SHARE_BPS) / BPS_DENOM;
-            toCollector = ethReceived - toOps;
-            _distributeETH(ethReceived);
-            emit SwapDebug(
-                "SUCCESS",
-                amount,
-                contractBalance,
-                pair,
-                ethReceived,
-                true
-            );
-        } else {
-            emit SwapDebug(
-                "ERROR_SWAP_FAILED",
-                amount,
-                contractBalance,
-                pair,
-                0,
-                false
-            );
+            _distributeETH(ethOut);
         }
-
-        emit ImmediateSwapResult(
-            swapSuccess,
-            swapSuccess ? amount : 0,
-            ethReceived,
-            toOps,
-            toCollector
-        );
     }
 
-    function _internalSwap(
-        uint256 tokenAmount
-    ) private returns (uint256 ethOut) {
+    /**
+     * @dev Internal function to swap tokens for ETH via Uniswap
+     * @param tokenAmount Amount of tokens to swap
+     * @return ethOut Amount of ETH received from swap
+     */
+    function _internalSwap(uint256 tokenAmount) private returns (uint256 ethOut) {
         if (inSwap) {
-            emit SwapDebug(
-                "ERROR_ALREADY_IN_SWAP",
-                tokenAmount,
-                0,
-                address(0),
-                0,
-                false
-            );
             return 0;
         }
-
+        
         inSwap = true;
-        emit SwapDebug(
-            "SWAP_START",
-            tokenAmount,
-            balanceOf(address(this)),
-            pair,
-            0,
-            false
-        );
-
-        // ДОБАВЬ ЭТО - проверка allowance
-        uint256 currentAllowance = allowance(address(this), address(router));
-        emit SwapDebug(
-            "CURRENT_ALLOWANCE",
-            tokenAmount,
-            currentAllowance,
-            address(router),
-            0,
-            false
-        );
-
+        
         _approve(address(this), address(router), tokenAmount);
-
-        // ДОБАВЬ ЭТО - проверка allowance после approve
-        uint256 newAllowance = allowance(address(this), address(router));
-        emit SwapDebug(
-            "NEW_ALLOWANCE",
-            tokenAmount,
-            newAllowance,
-            address(router),
-            0,
-            false
-        );
-
+        
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = WETH;
-
+        
         uint256 balanceBefore = address(this).balance;
-
-        // ДОБАВЬ ЭТО - проверка балансов перед свапом
-        uint256 tokenBalance = balanceOf(address(this));
-        emit SwapDebug(
-            "PRE_SWAP_BALANCES",
-            tokenAmount,
-            tokenBalance,
-            pair,
-            balanceBefore,
-            false
-        );
-
+        
         try
             router.swapExactTokensForETHSupportingFeeOnTransferTokens(
                 tokenAmount,
-                0, // ВОЗМОЖНАЯ ПРОБЛЕМА - попробуй поставить минимальную сумму
+                0,
                 path,
                 address(this),
                 block.timestamp + 300
             )
         {
             ethOut = address(this).balance - balanceBefore;
-            emit SwapDebug(
-                "SWAP_SUCCESS",
-                tokenAmount,
-                address(this).balance,
-                pair,
-                ethOut,
-                true
-            );
-        } catch Error(string memory reason) {
-            // ДОБАВЬ ЭТО - ловим конкретную ошибку
+        } catch {
             ethOut = 0;
-            emit SwapDebug(
-                "SWAP_ERROR_REASON",
-                tokenAmount,
-                bytes(reason).length,
-                pair,
-                0,
-                false
-            );
-            // Можно также добавить событие с самой ошибкой, но строки в events дороги
-        } catch (bytes memory lowLevelData) {
-            // ДОБАВЬ ЭТО - ловим низкоуровневые ошибки
-            ethOut = 0;
-            emit SwapDebug(
-                "SWAP_LOW_LEVEL_ERROR",
-                tokenAmount,
-                lowLevelData.length,
-                pair,
-                0,
-                false
-            );
         }
-
+        
         inSwap = false;
-        emit SwapDebug(
-            "SWAP_END",
-            tokenAmount,
-            address(this).balance,
-            pair,
-            ethOut,
-            ethOut > 0
-        );
         return ethOut;
     }
 
@@ -549,33 +387,47 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
      */
     function createPair() external onlyOwner {
         if (pair != address(0)) revert InvalidInput();
+        
         address factory = router.factory();
         address existingPair = IUniswapV2Factory(factory).getPair(
             address(this),
             WETH
         );
+        
         if (existingPair != address(0)) {
             pair = existingPair;
-            emit SwapDebug("PAIR_EXISTING", 0, 0, existingPair, 0, true);
         } else {
             pair = IUniswapV2Factory(factory).createPair(address(this), WETH);
-            emit SwapDebug("PAIR_CREATED", 0, 0, pair, 0, true);
         }
+        
         isMarket[pair] = true;
         emit MarketSet(pair, true);
     }
 
+    /**
+     * @notice Enables trading after initial setup
+     */
     function enableTrading() external onlyOwner {
         tradingEnabled = true;
         emit TradingEnabled();
     }
 
+    /**
+     * @notice Updates the total transfer fee (basis points)
+     * @param newTotal New fee in basis points (max 1000)
+     */
     function setFeeBps(uint16 newTotal) external onlyOwner {
         if (newTotal > MAX_FEE_BPS) revert FeeTooHigh();
         totalFeeBps = newTotal;
         emit FeesUpdated(newTotal);
     }
 
+    /**
+     * @notice Updates addresses of operational, fee collector, and buyback walletsp
+     * @param newOpsWallet New operations wallet
+     * @param newFeeCollector New fee collector contract
+     * @param newBuybackManager New buyback manager contract
+     */
     function setWallets(
         address payable newOpsWallet,
         address newFeeCollector,
