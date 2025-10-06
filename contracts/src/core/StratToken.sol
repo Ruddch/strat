@@ -57,6 +57,11 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
 
     mapping(address => bool) public limitExempt;
 
+    // Total fees collected
+
+    // Total ETH from fees (in wei)
+    uint256 public totalETHFromFees;
+
     // ====== Events ======
     event FeeTaken(uint256 amount, address from);
     event ImmediateSwapResult(
@@ -306,61 +311,133 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         );
     }
 
-    function _internalSwap(uint256 tokenAmount) private returns (uint256 ethOut) {
+    function _internalSwap(
+        uint256 tokenAmount
+    ) private returns (uint256 ethOut) {
         if (inSwap) {
-            emit SwapDebug("ERROR_ALREADY_IN_SWAP", tokenAmount, 0, address(0), 0, false);
+            emit SwapDebug(
+                "ERROR_ALREADY_IN_SWAP",
+                tokenAmount,
+                0,
+                address(0),
+                0,
+                false
+            );
             return 0;
         }
 
         inSwap = true;
-        emit SwapDebug("SWAP_START", tokenAmount, balanceOf(address(this)), pair, 0, false);
+        emit SwapDebug(
+            "SWAP_START",
+            tokenAmount,
+            balanceOf(address(this)),
+            pair,
+            0,
+            false
+        );
 
         // ДОБАВЬ ЭТО - проверка allowance
         uint256 currentAllowance = allowance(address(this), address(router));
-        emit SwapDebug("CURRENT_ALLOWANCE", tokenAmount, currentAllowance, address(router), 0, false);
-        
+        emit SwapDebug(
+            "CURRENT_ALLOWANCE",
+            tokenAmount,
+            currentAllowance,
+            address(router),
+            0,
+            false
+        );
+
         _approve(address(this), address(router), tokenAmount);
-        
+
         // ДОБАВЬ ЭТО - проверка allowance после approve
         uint256 newAllowance = allowance(address(this), address(router));
-        emit SwapDebug("NEW_ALLOWANCE", tokenAmount, newAllowance, address(router), 0, false);
+        emit SwapDebug(
+            "NEW_ALLOWANCE",
+            tokenAmount,
+            newAllowance,
+            address(router),
+            0,
+            false
+        );
 
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = WETH;
 
         uint256 balanceBefore = address(this).balance;
-        
+
         // ДОБАВЬ ЭТО - проверка балансов перед свапом
         uint256 tokenBalance = balanceOf(address(this));
-        emit SwapDebug("PRE_SWAP_BALANCES", tokenAmount, tokenBalance, pair, balanceBefore, false);
-
-        try router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+        emit SwapDebug(
+            "PRE_SWAP_BALANCES",
             tokenAmount,
-            0, // ВОЗМОЖНАЯ ПРОБЛЕМА - попробуй поставить минимальную сумму
-            path,
-            address(this),
-            block.timestamp + 300
-        ) {
+            tokenBalance,
+            pair,
+            balanceBefore,
+            false
+        );
+
+        try
+            router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+                tokenAmount,
+                0, // ВОЗМОЖНАЯ ПРОБЛЕМА - попробуй поставить минимальную сумму
+                path,
+                address(this),
+                block.timestamp + 300
+            )
+        {
             ethOut = address(this).balance - balanceBefore;
-            emit SwapDebug("SWAP_SUCCESS", tokenAmount, address(this).balance, pair, ethOut, true);
-        } catch Error(string memory reason) {  // ДОБАВЬ ЭТО - ловим конкретную ошибку
+            emit SwapDebug(
+                "SWAP_SUCCESS",
+                tokenAmount,
+                address(this).balance,
+                pair,
+                ethOut,
+                true
+            );
+        } catch Error(string memory reason) {
+            // ДОБАВЬ ЭТО - ловим конкретную ошибку
             ethOut = 0;
-            emit SwapDebug("SWAP_ERROR_REASON", tokenAmount, bytes(reason).length, pair, 0, false);
+            emit SwapDebug(
+                "SWAP_ERROR_REASON",
+                tokenAmount,
+                bytes(reason).length,
+                pair,
+                0,
+                false
+            );
             // Можно также добавить событие с самой ошибкой, но строки в events дороги
-        } catch (bytes memory lowLevelData) {  // ДОБАВЬ ЭТО - ловим низкоуровневые ошибки
+        } catch (bytes memory lowLevelData) {
+            // ДОБАВЬ ЭТО - ловим низкоуровневые ошибки
             ethOut = 0;
-            emit SwapDebug("SWAP_LOW_LEVEL_ERROR", tokenAmount, lowLevelData.length, pair, 0, false);
+            emit SwapDebug(
+                "SWAP_LOW_LEVEL_ERROR",
+                tokenAmount,
+                lowLevelData.length,
+                pair,
+                0,
+                false
+            );
         }
 
         inSwap = false;
-        emit SwapDebug("SWAP_END", tokenAmount, address(this).balance, pair, ethOut, ethOut > 0);
+        emit SwapDebug(
+            "SWAP_END",
+            tokenAmount,
+            address(this).balance,
+            pair,
+            ethOut,
+            ethOut > 0
+        );
         return ethOut;
     }
 
     // split ETH to ops n collector
     function _distributeETH(uint256 ethAmount) private {
         if (ethAmount == 0) return;
+
+        // Update total ETH from fees
+        totalETHFromFees += ethAmount;
 
         uint256 toOps = (ethAmount * OPS_SHARE_BPS) / BPS_DENOM;
         uint256 toCollector = ethAmount - toOps;
@@ -644,6 +721,10 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
 
     function getTokensInContract() external view returns (uint256) {
         return balanceOf(address(this));
+    }
+
+    function getTotalETHFromFees() external view returns (uint256) {
+        return totalETHFromFees;
     }
 
     // ====== Receive ETH ======

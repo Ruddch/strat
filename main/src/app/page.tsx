@@ -1,9 +1,15 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useRef, useEffect } from "react";
+import React, { useRef, useEffect } from "react";
 import { useScroll } from "@/contexts/ScrollContext";
 import { OrientationLock } from "@/components/ui/OrientationLock";
+import MetricsSection from "@/components/MetricsSection";
+import TakeProfitTable from "@/components/TakeProfitTable";
+import LastBuysTable from "@/components/LastBuysTable";
+import TreasurySection from "@/components/TreasurySection";
+import { useReadContract } from "wagmi";
+import { contractConfig } from "@/lib/contracts"; 
 
 const ProgressBar = dynamic(() => import("@/components/ui/ProgressBar").then(mod => ({ default: mod.ProgressBar })), { 
   ssr: false 
@@ -15,36 +21,45 @@ const ResponsiveBackgroundEffects = dynamic(() => import("@/components/ui/Respon
   ssr: false 
 });
 
-const orders = [
-  {
-    id: 1,
-    amount: 2485,
-    price: 547.15,
-    multiplier: 1.2,
-    predictedGain: 247
-  },
-  {
-    id: 2,
-    amount: 2485,
-    price: 547.15,
-    multiplier: 1.2,
-    predictedGain: 247
-  },
-  {
-    id: 3,
-    amount: 2485,
-    price: 547.15,
-    multiplier: 1.2,
-    predictedGain: 247
-  }
-]
 
 export default function Home() {
   //const { address } = useAccount();
   const containerRef = useRef<HTMLDivElement>(null);
   const takeProfitRef = useRef<HTMLDivElement>(null);
+  const lastBuysRef = useRef<HTMLDivElement>(null);
   const treasuryRef = useRef<HTMLDivElement>(null);
   const { setActiveSection } = useScroll();
+
+  // Get FeeCollector config (threshold) and ETH balance for progress bar
+  const { data: feeCollectorConfig, isLoading: isConfigLoading } = useReadContract({
+    ...contractConfig.feeCollector,
+    functionName: 'getConfig',
+    query: {
+      refetchInterval: 30000, // 30 seconds
+    },
+  });
+
+  const { data: feeCollectorETHBalance, isLoading: isETHBalanceLoading } = useReadContract({
+    ...contractConfig.feeCollector,
+    functionName: 'getETHBalance',
+    query: {
+      refetchInterval: 30000, // 30 seconds
+    },
+  });
+
+  // Calculate progress percentage
+  const progressPercentage = React.useMemo(() => {
+    if (!feeCollectorConfig || !feeCollectorETHBalance || isConfigLoading || isETHBalanceLoading) return 0;
+    
+    const [threshold] = feeCollectorConfig;
+    const currentBalance = feeCollectorETHBalance;
+    
+    if (threshold === BigInt(0)) return 0;
+    
+    const percentage = Number((currentBalance * BigInt(100)) / threshold);
+    return Math.min(percentage, 100);
+  }, [feeCollectorConfig, feeCollectorETHBalance, isConfigLoading, isETHBalanceLoading]);
+
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -62,7 +77,7 @@ export default function Home() {
       }
     );
 
-    const sections = ['live', 'take-profit', 'treasury'];
+    const sections = ['live', 'take-profit', 'last-buys', 'treasury'];
     sections.forEach(sectionId => {
       const element = document.getElementById(sectionId);
       if (element) {
@@ -85,27 +100,10 @@ export default function Home() {
       <div className="ml-0 mr-0 lg:ml-64 lg:mr-64 font-[family-name:var(--font-avenue-mono)] h-screen no-scrollbar overflow-y-scroll snap-y snap-mandatory">
       {/* First Section - Original Dashboard */}
       <div id="live" ref={containerRef} className="relative grid grid-rows-[1fr_auto] min-h-screen snap-start">
-        <ResponsiveBackgroundEffects mobileFontSize={30} desktopFontSize={200} />
+        <ResponsiveBackgroundEffects message="LAUNCH SOON" mobileFontSize={30} desktopFontSize={200} />
         <main className="relative flex flex-col justify-between w-full h-full z-10 text-white">
           {/* Top Section - Metrics */}
-          <div className="flex justify-between w-full border-b border-[var(--color-border-accent)]">
-            <div className="flex-1 text-center pb-7 pt-13 border-r border-[var(--color-border-accent)]">
-              <p className="text-sm text-gray-300 mb-2 font-[family-name:var(--font-martian-mono)]">
-                Total commissions
-              </p>
-              <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
-                5 587
-              </p>
-            </div>
-            <div className="flex-1 text-center pb-7 pt-13">
-              <p className="text-sm text-gray-300 mb-2 font-[family-name:var(--font-martian-mono)]">
-                Total bought
-              </p>
-              <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
-                6 847
-              </p>
-            </div>
-          </div>
+          <MetricsSection />
 
           {/* Middle Section - Background Effects (already handled by BackgroundEffects component) */}
           <div className="flex-1 flex items-center justify-center">
@@ -118,7 +116,7 @@ export default function Home() {
 
           {/* Bottom Section - Progress Bar */}
           <div className="w-full">
-            <ProgressBar percentage={75} className="p-2 border-b border-t border-[var(--color-border-accent)]" containerRef={containerRef} />
+            <ProgressBar percentage={progressPercentage} className="p-2 border-b border-t border-[var(--color-border-accent)]" containerRef={containerRef} />
             
             {/* Labels - 4 equal cells */}
             <div className="flex w-full">
@@ -141,93 +139,15 @@ export default function Home() {
 
       {/* Second Section - Take Profit */}
       <div id="take-profit" ref={takeProfitRef} className="relative min-h-screen z-10 text-white snap-start">
-        <div>
-          <h2 className="pt-13 lg:pt-11 pb-11 pl-2 pr-2 border-b border-t border-[var(--color-border-accent)] text-[36px] lg:text-[72px] font-normal leading-[100%] tracking-[0%] text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
-            Take Profit
-          </h2>
-          
-          {/* Take Profit Table */}
-          <div className="flex w-full border-b border-[var(--color-border-accent)]">
-              <div className="flex-1 text-left p-2">
-                <span className="text-[14px] font-light leading-[150%] tracking-[0%] text-white font-[family-name:var(--font-martian-mono)]">
-                  PENGU amount
-                </span>
-              </div>
-              <div className="flex-1 p-2">
-                <span className="text-[14px] font-light leading-[150%] tracking-[0%] text-white font-[family-name:var(--font-martian-mono)]">
-                  Price
-                </span>
-              </div>
-              <div className="flex-1 p-2">
-                <span className="text-[14px] font-light leading-[150%] tracking-[0%] text-white font-[family-name:var(--font-martian-mono)]">
-                  Multiplier
-                </span>
-              </div>
-              <div className="flex-1 p-2">
-                <span className="text-[14px] font-light leading-[150%] tracking-[0%] text-white font-[family-name:var(--font-martian-mono)]">
-                  Predicted Gain
-                </span>
-              </div>
-          </div>
-            
-            {/* Table Rows */}
-             {orders.map((order, index) => (
-               <div key={order.id} className={`flex w-full ${index % 2 === 1 ? 'bg-[rgba(96,255,255,0.05)]' : ''}`}>
-                 <div key={order.id} className="flex-1 text-left p-2 pb-8 pt-8 border-b border-[var(--color-border-accent)]">
-                   <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-white font-[family-name:var(--font-random-grotesque)]">
-                     {order.amount}
-                   </span>
-                 </div>
-                 <div className="flex-1 border-l p-2 pb-8 pt-8 border-b border-[var(--color-border-accent)]">
-                   <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-white font-[family-name:var(--font-random-grotesque)]">
-                     {order.price}
-                   </span>
-                 </div>
-                 <div className="flex-1 border-l p-2 pb-8 pt-8 border-b border-[var(--color-border-accent)]">
-                   <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-white font-[family-name:var(--font-random-grotesque)]">
-                     {order.multiplier}x
-                   </span>
-                 </div>
-                 <div className="flex-1 p-2 pb-8 pt-8 border-l border-b border-[var(--color-border-accent)]">
-                   <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-[#00FF00] font-[family-name:var(--font-random-grotesque)]">
-                     +{order.predictedGain}
-                   </span>
-                 </div>
-               </div>
-             ))}
-          </div>
+        <TakeProfitTable />
+</div>
+        <div id="last-buys" ref={lastBuysRef} className="relative min-h-screen z-10 text-white snap-start">
+          <LastBuysTable />
         </div>
 
       {/* Third Section - Treasury */}
       <div id="treasury" ref={treasuryRef} className="relative min-h-screen z-10 text-white snap-start">
-        <div>
-          <h2 className="pt-13 lg:pt-11 pb-11 pl-2 pr-2 border-b border-t border-[var(--color-border-accent)] text-[36px] lg:text-[72px] font-normal leading-[100%] tracking-[0%] text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
-            Treasury
-          </h2>
-          
-          {/* Treasury Data Panels */}
-          <div className="flex w-full border-b border-[var(--color-border-accent)]">
-            {/* Left Panel - Current holding */}
-            <div className="flex-1 text-center pb-8 pt-8 border-r border-[var(--color-border-accent)]">
-              <p className="text-[14px] font-light leading-[150%] tracking-[0%] text-white mb-2 font-[family-name:var(--font-martian-mono)]">
-                Current holding
-              </p>
-              <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
-                1 587
-              </p>
-            </div>
-            
-            {/* Right Panel - Total dividends paid */}
-            <div className="flex-1 text-center pb-8 pt-8">
-              <p className="text-[14px] font-light leading-[150%] tracking-[0%] text-white mb-2 font-[family-name:var(--font-martian-mono)]">
-                Total dividends paid
-              </p>
-              <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
-                12 587
-              </p>
-            </div>
-          </div>
-        </div>
+        <TreasurySection />
       </div>
       </div>
     </OrientationLock>

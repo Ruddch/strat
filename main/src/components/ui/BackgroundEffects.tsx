@@ -142,7 +142,6 @@ export function BackgroundEffects({
 
     const setup = useCallback(() => {
         if (typeof window === 'undefined' || !canvasRef.current || !bufferRef.current || !ctxRef.current) {
-            console.log('BackgroundEffects setup failed: missing refs');
             return;
         }
 
@@ -152,8 +151,6 @@ export function BackgroundEffects({
 
         const width = window.innerWidth;
         const height = window.innerHeight;
-        
-        console.log('BackgroundEffects setup:', { width, height, message: options.text.message });
         
         canvas.width = width;
         canvas.height = height;
@@ -197,7 +194,6 @@ export function BackgroundEffects({
                 }
             }
 
-            console.log('BackgroundEffects particles created:', pixels.length / particleProps.length);
             particlesRef.current = new PropsArray(pixels.length / particleProps.length, particleProps);
             particlesRef.current.set(pixels, 0);
             imageBufferRef.current = buffer.createImageData(width, height);
@@ -366,7 +362,6 @@ export function BackgroundEffects({
     }, []);
 
     useEffect(() => {
-        console.log('BackgroundEffects useEffect');
         if (!isMounted || typeof window === 'undefined') return;
 
         if (canvasRef.current && !isInitializedRef.current) {
@@ -408,7 +403,7 @@ export function BackgroundEffects({
                 width: '100%',
                 height: '100%',
                 pointerEvents: 'none',
-                touchAction: 'auto', // Разрешаем скролл для контейнера
+                touchAction: 'auto', 
             }}
         >
             <canvas
@@ -420,7 +415,7 @@ export function BackgroundEffects({
                     width: '100%',
                     height: '100%',
                     pointerEvents: 'none',
-                    touchAction: 'none', // Отключаем touch действия для canvas
+                    touchAction: 'none', 
                     backgroundColor: 'rgba(1, 27, 35, 1)'
                 }}
             />
@@ -431,7 +426,6 @@ export function BackgroundEffects({
                     left: 0,
                     width: '100%',
                     height: '100%',
-                    // backgroundColor: 'rgba(0, 152, 202, 0.2)',
                     pointerEvents: 'none'
                 }}
             />
