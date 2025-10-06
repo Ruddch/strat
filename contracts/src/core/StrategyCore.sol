@@ -119,6 +119,7 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
     error PriceStale(uint256 age, uint256 threshold);
     error PriceOutOfBounds(uint256 price, uint256 min, uint256 max);
     event FeeCollectorUpdated(address indexed oldFeeCollector, address indexed newFeeCollector);
+    error TransferFailed();
     
     // ==================== MODIFIERS ====================
     
@@ -237,85 +238,30 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
      * @param amountPengu Amount of PENGU tokens to deposit
      * @param ethSpent Amount of ETH spent to acquire these tokens
      */
-    function depositPengu(uint256 amountPengu, uint256 ethSpent) 
-        external 
-        onlyFeeCollector 
-        whenNotPaused 
-        nonReentrant 
+    function depositPengu(uint256 amountPengu, uint256 ethSpent)
+        external
+        onlyFeeCollector
+        whenNotPaused
+        nonReentrant
     {
-        // Debug: Log all input parameters and sender state
-        emit DebugDeposit(
-            amountPengu, 
-            ethSpent, 
-            msg.sender, 
-            IERC20(penguAddress).balanceOf(msg.sender), 
-            IERC20(penguAddress).allowance(msg.sender, address(this)),
-            block.timestamp
-        );
-        
-        // Check zero amounts with debug
-        if (amountPengu == 0) {
-            emit DebugMessage("ERROR: amountPengu is zero");
-            revert ZeroAmount();
-        }
-        if (ethSpent == 0) {
-            emit DebugMessage("ERROR: ethSpent is zero");
-            revert ZeroAmount();
-        }
-        
-        emit DebugMessage("INFO: Zero amount checks passed");
-        
-        // Debug before transfer
+        if (amountPengu == 0 || ethSpent == 0) revert ZeroAmount();
+
         IERC20 penguToken = IERC20(penguAddress);
         uint256 balanceBefore = penguToken.balanceOf(address(this));
         uint256 senderBalance = penguToken.balanceOf(msg.sender);
         uint256 allowanceAmount = penguToken.allowance(msg.sender, address(this));
-        
-        emit DebugTransfer(balanceBefore, senderBalance, allowanceAmount, amountPengu);
-        
-        if (senderBalance < amountPengu) {
-            emit DebugMessage("ERROR: Sender has insufficient PENGU balance");
-            revert("Insufficient balance");
-        }
-        
-        if (allowanceAmount < amountPengu) {
-            emit DebugMessage("ERROR: Insufficient allowance for transfer");
-            revert("Insufficient allowance");
-        }
-        
-        emit DebugMessage("INFO: Balance and allowance checks passed");
-        
-        // Attempt transfer with detailed error handling
-        try penguToken.transferFrom(msg.sender, address(this), amountPengu) returns (bool success) {
-            if (!success) {
-                emit DebugMessage("ERROR: transferFrom returned false");
-                revert("Transfer failed");
-            }
-            emit DebugMessage("INFO: transferFrom successful");
-        } catch Error(string memory reason) {
-            emit DebugMessage(string.concat("ERROR: transferFrom failed with reason: ", reason));
-            revert("Transfer failed");
-        } catch (bytes memory lowLevelData) {
-            emit DebugMessage("ERROR: transferFrom failed with low level error");
-            emit DebugBytes(lowLevelData);
-            revert("Transfer failed");
-        }
-        
-        // Verify transfer actually happened
+
+        if (senderBalance < amountPengu) revert InsufficientBalance();
+        if (allowanceAmount < amountPengu) revert InsufficientBalance();
+
+        bool success = penguToken.transferFrom(msg.sender, address(this), amountPengu);
+        if (!success) revert TransferFailed();
+
         uint256 balanceAfter = penguToken.balanceOf(address(this));
-        if (balanceAfter != balanceBefore + amountPengu) {
-            emit DebugMessage("ERROR: Transfer amount mismatch");
-            emit DebugTransferResult(balanceBefore, balanceAfter, amountPengu);
-            revert("Transfer amount mismatch");
-        }
-        
-        emit DebugMessage("INFO: Transfer verification passed");
-        
-        // Calculate average price
+        if (balanceAfter != balanceBefore + amountPengu) revert TransferFailed();
+
         uint256 avgPrice = (ethSpent * PRICE_PRECISION) / amountPengu;
-        emit DebugPrice(ethSpent, PRICE_PRECISION, amountPengu, avgPrice);
-        
-        // Create new lot
+
         lots[lotTail] = Lot({
             amountPengu: amountPengu,
             ethSpent: ethSpent,
@@ -323,26 +269,13 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
             timestamp: block.timestamp,
             active: true
         });
-        
-        emit DebugMessage("INFO: Lot created successfully");
-        
-        // Update counters
+
         uint256 lotId = lotTail;
         lotTail++;
         activeLotCount++;
-        
-        emit DebugMessage("INFO: Counters updated successfully");
-        emit PenguDeposited(lotId, amountPengu, ethSpent, avgPrice);
-        emit DebugMessage("INFO: depositPengu completed successfully");
-    }
 
-    // Debug events
-    event DebugDeposit(uint256 amount, uint256 ethSpent, address sender, uint256 balance, uint256 allowance, uint256 timestamp);
-    event DebugMessage(string message);
-    event DebugTransfer(uint256 balanceBefore, uint256 senderBalance, uint256 allowance, uint256 requestedAmount);
-    event DebugTransferResult(uint256 balanceBefore, uint256 balanceAfter, uint256 expectedIncrease);
-    event DebugPrice(uint256 ethSpent, uint256 precision, uint256 amountPengu, uint256 avgPrice);
-    event DebugBytes(bytes data);
+        emit PenguDeposited(lotId, amountPengu, ethSpent, avgPrice);
+    }
     
     /**
      * @notice Set take profit ladder configuration
