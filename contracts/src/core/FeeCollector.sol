@@ -140,17 +140,17 @@ contract FeeCollector is Ownable, ReentrancyGuard {
     
     /**
      * @dev Process fees with automatic slippage calculation
-     * @param slippageBps Slippage tolerance in basis points (e.g., 300 = 3%)
+     * @param slippageBps Slippage tolerance in basis points
      */
     function processFeesWithSlippage(uint256 slippageBps) external nonReentrant {
         emit DebugMessage("processFeesWithSlippage START");
         emit DebugSlippage(slippageBps);
         
-        if (slippageBps > 5000) {
+        if (slippageBps > 1500) {
             emit DebugMessage("ERROR: Slippage too high");
             revert SlippageTooHigh();
         }
-
+        
         uint256 currentBalance = address(this).balance;
         emit DebugBalance(currentBalance, threshold);
         
@@ -158,7 +158,7 @@ contract FeeCollector is Ownable, ReentrancyGuard {
             emit DebugMessage("ERROR: Insufficient balance");
             revert InsufficientBalance();
         }
-
+        
         uint256 ethToUse = useAmount > currentBalance ? currentBalance : useAmount;
         emit DebugEthToUse(ethToUse, useAmount, currentBalance);
         
@@ -166,23 +166,22 @@ contract FeeCollector is Ownable, ReentrancyGuard {
             emit DebugMessage("ERROR: Zero amount to use");
             revert ZeroAmount();
         }
-
-        // Calculate minimum tokens out based on current price and slippage
+        
         emit DebugMessage("Before _calculateMinTokensOut");
         uint256 minTokensOut = _calculateMinTokensOut(ethToUse, slippageBps);
         emit DebugMinTokens(minTokensOut);
-
+        
         // Execute the swap
         emit DebugMessage("Before _swapETHForPengu");
         uint256 penguReceived = _swapETHForPengu(ethToUse, minTokensOut);
         emit DebugMessage("After _swapETHForPengu SUCCESS");
         emit DebugPenguReceived(penguReceived);
-
+        
         // Distribute PENGU tokens
         emit DebugMessage("Before _distributePengu");
         _distributePengu(penguReceived, ethToUse);
         emit DebugMessage("After _distributePengu SUCCESS");
-
+        
         emit FeeProcessed(ethToUse, penguReceived,
             (penguReceived * STRATEGY_RATIO) / BPS_DENOM,
             (penguReceived * TREASURY_RATIO) / BPS_DENOM

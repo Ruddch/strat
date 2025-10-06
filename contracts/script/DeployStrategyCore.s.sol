@@ -6,16 +6,18 @@ import "../src/core/StrategyCore.sol";
 
 contract DeployStrategyCore is Script {
     function run() external {
-        vm.startBroadcast();
-        
-        new StrategyCore(
-            0x9F3C922E74577a854AdB3c07a7313C9099cf2c87,  // penguAddress
-            0x1634f62B526cC6eD97D9b5ADe45Ab023d0465cc5,  // NEW feeCollector
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        vm.startBroadcast(deployerPrivateKey);
+
+        StrategyCore strategyCore = new StrategyCore(
+            0x872309559f33bdb8785A69eaFf51BBD7430b3049,  // MockPENGU (ИСПРАВЛЕНО)
+            0xe86c1df3b9F815A9f1CdceA8eAB398503452CE44,  // FeeCollector (АКТУАЛЬНЫЙ)
             0x96ff7D9dbf52FdcAe79157d3b249282c7FABd409,  // router
-            0x2820D10cFC44110E8D1E497c1Fb26C542dFAE2e2,  // buybackManager (из старой настройки)
+            0xF210ACE50f88B984336EDF852ca42F9F74a91668,  // BuybackManager (ИСПРАВЛЕНО)
             0x156C7eE65C5A9e6eFc62CE4645B631c5617EF894   // owner
         );
-        
+
+        console.log("NEW StrategyCore deployed at:", address(strategyCore));
         vm.stopBroadcast();
     }
 }

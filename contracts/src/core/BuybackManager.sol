@@ -20,7 +20,7 @@ contract BuybackManager is Ownable, Pausable, ReentrancyGuard {
     
     // ==================== CONSTANTS ====================
     
-    uint256 public constant MAX_SLIPPAGE_BPS = 500;           // 5% max slippage
+    uint256 public constant MAX_SLIPPAGE_BPS = 6000;           // 60% max slippage
     uint256 public constant BPS_DENOMINATOR = 10000;
     uint256 public constant MAX_CALLER_REWARD_BPS = 100;      // 1% max caller reward
     uint256 public constant MIN_BUYBACK_THRESHOLD = 0.001 ether;  // Minimum 0.001 ETH
@@ -31,7 +31,7 @@ contract BuybackManager is Ownable, Pausable, ReentrancyGuard {
     
     // Core addresses
     address public immutable stratTokenAddress;
-    address public immutable strategyCore;
+    address public strategyCore;
     IUniswapV2Router02 public router;
     
     // Configuration
@@ -73,6 +73,7 @@ contract BuybackManager is Ownable, Pausable, ReentrancyGuard {
     event CallerRewardUpdated(uint256 oldReward, uint256 newReward);
     event AutoBuybackToggled(bool enabled);
     event RouterUpdated(address oldRouter, address newRouter);
+    event StrategyCoreUpdated(address indexed oldStrategyCore, address indexed newStrategyCore);
     
     event BuybackFailed(
         string reason,
@@ -437,6 +438,18 @@ contract BuybackManager is Ownable, Pausable, ReentrancyGuard {
     function unpause() external onlyOwner {
         _unpause();
     }
+
+    /**
+     * @notice Update StrategyCore address
+     * @param newStrategyCore New StrategyCore contract address
+     */
+    function updateStrategyCore(address newStrategyCore) external onlyOwner {
+        if (newStrategyCore == address(0)) revert ZeroAddress();
+        address oldStrategyCore = strategyCore;
+        strategyCore = newStrategyCore;
+        emit StrategyCoreUpdated(oldStrategyCore, newStrategyCore);
+    }
+
     
     // ==================== EMERGENCY FUNCTIONS ====================
     

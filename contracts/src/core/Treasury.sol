@@ -65,15 +65,22 @@ contract Treasury is Ownable, Pausable, ReentrancyGuard {
         if (currentEpoch > 0) {
             _endCurrentEpoch();
         }
-        uint256 rollover = 0;
-        if (currentEpoch > 2) {
-            rollover = _processRollover(currentEpoch - 2);
+        
+        if (currentEpoch > 1) {
+            uint256 expiredEpochId = currentEpoch - 1;
+            uint256 targetEpochId = currentEpoch;
+            
+            uint256 rollover = _processRollover(expiredEpochId);
+            if (rollover > 0) {
+                epochs[targetEpochId].totalDividends += rollover;
+            }
         }
+        
         currentEpoch++;
-        EpochInfo storage newEpoch = epochs[currentEpoch];
-        newEpoch.epochId = currentEpoch;
-        newEpoch.startTime = block.timestamp;
-        newEpoch.totalDividends = rollover;
+        
+        epochs[currentEpoch].epochId = currentEpoch;
+        epochs[currentEpoch].startTime = block.timestamp;
+        epochs[currentEpoch].totalDividends = 0;
         emit EpochStarted(currentEpoch, block.timestamp);
     }
 
@@ -81,12 +88,11 @@ contract Treasury is Ownable, Pausable, ReentrancyGuard {
         require(currentEpoch > 0, "No active epoch");
         EpochInfo storage epoch = epochs[currentEpoch];
         epoch.endTime = block.timestamp;
+        
         if (currentEpoch > 1) {
-            EpochInfo storage prev = epochs[currentEpoch - 1];
-            if (prev.isFinalized) prev.isClaimable = true;
+            epochs[currentEpoch - 1].isClaimable = false;
         }
         
-        if (currentEpoch > 3) epochs[currentEpoch - 3].isClaimable = false;
         emit EpochEnded(currentEpoch, block.timestamp, epoch.totalDividends);
     }
 
@@ -127,7 +133,9 @@ contract Treasury is Ownable, Pausable, ReentrancyGuard {
         require(currentEpoch > 0, "No active epoch");
         require(epochs[currentEpoch].endTime == 0, "Epoch already ended");
         require(amount > 0, "Amount must be positive");
-
+        
+        require(PENGU.transferFrom(msg.sender, address(this), amount), "Transfer failed");
+        
         epochs[currentEpoch].totalDividends += amount;
         emit DividendsAdded(currentEpoch, amount);
     }
@@ -160,14 +168,9 @@ contract Treasury is Ownable, Pausable, ReentrancyGuard {
 
     function _processRollover(uint256 expiredEpochId) internal returns (uint256 rolledOverAmount) {
         EpochInfo storage expiredEpoch = epochs[expiredEpochId];
-        
         if (expiredEpoch.rolloverProcessed) return 0;
-        
         rolledOverAmount = expiredEpoch.totalDividends - expiredEpoch.claimedAmount;
-        
         expiredEpoch.rolloverProcessed = true;
-        
-        epochs[currentEpoch + 1].receivedRollover = true;
         
         if (rolledOverAmount > 0) {
             emit TokensRolledOver(expiredEpochId, currentEpoch + 1, rolledOverAmount);
