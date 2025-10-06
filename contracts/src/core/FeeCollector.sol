@@ -37,6 +37,7 @@ contract FeeCollector is Ownable, ReentrancyGuard {
     error InvalidDeadline();
     error ZeroAmount();
     error SlippageTooHigh();
+    error ApprovalFailed();
 
     // ============ EVENTS ============
     event ETHReceived(address indexed from, uint256 amount);
@@ -58,32 +59,6 @@ contract FeeCollector is Ownable, ReentrancyGuard {
         address indexed newTreasury
     );
     event EmergencyWithdraw(address indexed token, uint256 amount);
-
-    event DebugMessage(string message);
-    event DebugDistributePengu(
-        uint256 totalAmount,
-        uint256 ethSpent,
-        address strategyCore,
-        address treasury
-    );
-    event DebugDistributeAmounts(
-        uint256 toStrategy,
-        uint256 toTreasury,
-        uint256 ratio,
-        uint256 denom
-    );
-    event DebugSlippage(uint256 slippageBps);
-    event DebugBalance(uint256 currentBalance, uint256 threshold);
-    event DebugEthToUse(
-        uint256 ethToUse,
-        uint256 useAmount,
-        uint256 currentBalance
-    );
-    event DebugMinTokens(uint256 minTokensOut);
-    event DebugPenguReceived(uint256 penguReceived);
-    event DebugPenguAddress(address penguAddress);
-    event DebugApprove(address spender, uint256 amount, bool result);
-    event DebugDepositParams(uint256 amount, uint256 ethSpent);
 
     // ============ STATE VARIABLES ============
 
@@ -159,56 +134,28 @@ contract FeeCollector is Ownable, ReentrancyGuard {
     // ============ MAIN FUNCTIONS ============
 
     /**
-     * @dev Process fees with automatic slippage calculation
-     * @param slippageBps Slippage tolerance in basis points
+     * @dev Process fees received, swap for PENGU, and distribute between strategy and treasury.
+     * @param slippageBps Slippage tolerance (basis points)
      */
-    function processFeesWithSlippage(
-        uint256 slippageBps
-    ) external nonReentrant {
-        emit DebugMessage("processFeesWithSlippage START");
-        emit DebugSlippage(slippageBps);
-        
-        if (slippageBps > 1500) {
-            emit DebugMessage("ERROR: Slippage too high");
-            revert SlippageTooHigh();
-        }
-        
+    function processFeesWithSlippage(uint256 slippageBps) external nonReentrant {
+        if (slippageBps > 1500) revert SlippageTooHigh();
+
         uint256 currentBalance = address(this).balance;
-        emit DebugBalance(currentBalance, threshold);
+        if (currentBalance < threshold) revert InsufficientBalance();
 
-        if (currentBalance < threshold) {
-            emit DebugMessage("ERROR: Insufficient balance");
-            revert InsufficientBalance();
-        }
         uint256 ethToUse = useAmount > currentBalance ? currentBalance : useAmount;
-        emit DebugEthToUse(ethToUse, useAmount, currentBalance);
+        if (ethToUse == 0) revert ZeroAmount();
 
-        if (ethToUse == 0) {
-            emit DebugMessage("ERROR: Zero amount to use");
-            revert ZeroAmount();
-        }
-        
-        emit DebugMessage("Before _calculateMinTokensOut");
         uint256 minTokensOut = _calculateMinTokensOut(ethToUse, slippageBps);
-        emit DebugMinTokens(minTokensOut);
-        
-        // Execute the swap
-        emit DebugMessage("Before _swapETHForPengu");
         uint256 penguReceived = _swapETHForPengu(ethToUse, minTokensOut);
-        emit DebugMessage("After _swapETHForPengu SUCCESS");
-        emit DebugPenguReceived(penguReceived);
-        
-        // Distribute PENGU tokens
-        emit DebugMessage("Before _distributePengu");
+
         _distributePengu(penguReceived, ethToUse);
-        emit DebugMessage("After _distributePengu SUCCESS");
-        
-        emit FeeProcessed(ethToUse, penguReceived,
+
+        emit FeeProcessed(
+            ethToUse, penguReceived,
             (penguReceived * STRATEGY_RATIO) / BPS_DENOM,
             (penguReceived * TREASURY_RATIO) / BPS_DENOM
         );
-
-        emit DebugMessage("processFeesWithSlippage COMPLETE");
     }
 
     // ============ INTERNAL FUNCTIONS ============
@@ -262,68 +209,31 @@ contract FeeCollector is Ownable, ReentrancyGuard {
      * @param ethSpent Amount of ETH spent for this PENGU purchase
      */
     function _distributePengu(uint256 totalAmount, uint256 ethSpent) internal {
-        emit DebugMessage("_distributePengu START");
-        emit DebugDistributePengu(
-            totalAmount,
-            ethSpent,
-            address(strategyCore),
-            address(treasury)
-        );
-
         totalPenguPurchased += totalAmount;
+        
         uint256 toStrategy = (totalAmount * STRATEGY_RATIO) / BPS_DENOM;
         uint256 toTreasury = totalAmount - toStrategy;
-        emit DebugDistributeAmounts(
-            toStrategy,
-            toTreasury,
-            STRATEGY_RATIO,
-            BPS_DENOM
-        );
-
+        
         IERC20 pengu = IERC20(penguAddress);
-        emit DebugPenguAddress(penguAddress);
-
-        // Send to StrategyCore with eth spent info
+        
+        // Send to StrategyCore with proportional ETH spent
         if (toStrategy > 0) {
-            emit DebugMessage("StrategyCore section START");
-            emit DebugMessage("Before StrategyCore approve");
-
-            bool approveResult = pengu.approve(
-                address(strategyCore),
-                toStrategy
-            );
-            emit DebugApprove(address(strategyCore), toStrategy, approveResult);
-
-            emit DebugMessage("Before StrategyCore depositPengu");
+            if (!pengu.approve(address(strategyCore), toStrategy)) {
+                revert ApprovalFailed();
+            }
+            
             uint256 strategyEthSpent = (ethSpent * STRATEGY_RATIO) / BPS_DENOM;
-            emit DebugDepositParams(toStrategy, strategyEthSpent);
-
-            // Здесь может происходить ошибка
             strategyCore.depositPengu(toStrategy, strategyEthSpent);
-            emit DebugMessage("StrategyCore depositPengu SUCCESS");
-        } else {
-            emit DebugMessage("Skipping StrategyCore - toStrategy is 0");
         }
-
+        
         // Send to Treasury
         if (toTreasury > 0) {
-            emit DebugMessage("Treasury section START");
-            emit DebugMessage("Before Treasury approve");
-
-            require(
-                pengu.approve(address(treasury), toTreasury),
-                "Approve failed"
-            );
-            emit DebugMessage("Treasury approve SUCCESS");
-
-            emit DebugMessage("Before Treasury depositPengu");
+            if (!pengu.approve(address(treasury), toTreasury)) {
+                revert ApprovalFailed();
+            }
+            
             treasury.depositPengu(toTreasury);
-            emit DebugMessage("Treasury depositPengu SUCCESS");
-        } else {
-            emit DebugMessage("Skipping Treasury - toTreasury is 0");
         }
-
-        emit DebugMessage("_distributePengu COMPLETE");
     }
 
     /**
@@ -471,55 +381,6 @@ contract FeeCollector is Ownable, ReentrancyGuard {
         tokenContract.safeTransfer(owner(), withdrawAmount);
 
         emit EmergencyWithdraw(token, withdrawAmount);
-    }
-
-    /**
-     * @dev Debug function to check distribution parameters
-     */
-    function debugDistribution() external onlyOwner {
-        IERC20 pengu = IERC20(penguAddress);
-        uint256 totalAmount = pengu.balanceOf(address(this));
-        uint256 toStrategy = (totalAmount * STRATEGY_RATIO) / BPS_DENOM;
-        uint256 toTreasury = totalAmount - toStrategy;
-        uint256 ethSpent = address(this).balance; // Используем текущий ETH баланс
-        uint256 strategyEthSpent = (ethSpent * STRATEGY_RATIO) / BPS_DENOM;
-
-        // Тестируем approve
-        bool approveSuccess = pengu.approve(address(strategyCore), toStrategy);
-        uint256 allowanceAfter = pengu.allowance(
-            address(this),
-            address(strategyCore)
-        );
-
-        emit DebugDistribution(
-            totalAmount,
-            toStrategy,
-            toTreasury,
-            ethSpent,
-            strategyEthSpent,
-            approveSuccess,
-            allowanceAfter
-        );
-    }
-
-    event DebugDistribution(
-        uint256 totalAmount,
-        uint256 toStrategy,
-        uint256 toTreasury,
-        uint256 ethSpent,
-        uint256 strategyEthSpent,
-        bool approveSuccess,
-        uint256 allowanceAfter
-    );
-
-    /**
-     * @dev Manual approve for debugging
-     */
-    function manualApprove(
-        address spender,
-        uint256 amount
-    ) external onlyOwner returns (bool) {
-        return IERC20(penguAddress).approve(spender, amount);
     }
 
     // ============ VIEW FUNCTIONS ============
