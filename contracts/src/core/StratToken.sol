@@ -173,8 +173,17 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         bool marketFrom = isMarket[from];
         bool marketTo = isMarket[to];
 
+        uint256 feeAmount = (amount * _totalFeeBps) / BPS_DENOM;
+        uint256 transferAmount = amount - feeAmount;
+
         // Apply anti-whale limits first
-        _enforceTransactionLimits(from, to, amount, marketFrom, marketTo);
+        _enforceTransactionLimits(
+            from,
+            to,
+            transferAmount,
+            marketFrom,
+            marketTo
+        );
 
         // Cache fee exemption status
         bool fromExempt = feeExempt[from];
@@ -197,10 +206,6 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
             return;
         }
 
-        uint256 feeAmount = (amount * _totalFeeBps) / BPS_DENOM;
-        uint256 transferAmount = amount - feeAmount;
-
-        // Transfer net amount to recipient
         super._update(from, to, transferAmount);
         super._update(from, address(this), feeAmount);
 
