@@ -207,9 +207,9 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         emit FeeTaken(feeAmount, from);
 
         // Try immediate swap of collected fees
-        if (!_inSwap) {
-            _tryImmediateSwap(feeAmount);
-        }
+        // if (!_inSwap) {
+        //     _tryImmediateSwap(feeAmount);
+        // }
     }
 
     /**
@@ -220,13 +220,13 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         if (pair == address(0)) {
             return;
         }
-        
+
         if (balanceOf(address(this)) < amount) {
             return;
         }
-        
+
         uint256 ethOut = _internalSwap(amount);
-        
+
         if (ethOut > 0) {
             _distributeETH(ethOut);
         }
@@ -237,21 +237,23 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
      * @param tokenAmount Amount of tokens to swap
      * @return ethOut Amount of ETH received from swap
      */
-    function _internalSwap(uint256 tokenAmount) private returns (uint256 ethOut) {
+    function _internalSwap(
+        uint256 tokenAmount
+    ) private returns (uint256 ethOut) {
         if (inSwap) {
             return 0;
         }
-        
+
         inSwap = true;
-        
+
         _approve(address(this), address(router), tokenAmount);
-        
+
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = WETH;
-        
+
         uint256 balanceBefore = address(this).balance;
-        
+
         try
             router.swapExactTokensForETHSupportingFeeOnTransferTokens(
                 tokenAmount,
@@ -265,7 +267,7 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         } catch {
             ethOut = 0;
         }
-        
+
         inSwap = false;
         return ethOut;
     }
@@ -387,19 +389,19 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
      */
     function createPair() external onlyOwner {
         if (pair != address(0)) revert InvalidInput();
-        
+
         address factory = router.factory();
         address existingPair = IUniswapV2Factory(factory).getPair(
             address(this),
             WETH
         );
-        
+
         if (existingPair != address(0)) {
             pair = existingPair;
         } else {
             pair = IUniswapV2Factory(factory).createPair(address(this), WETH);
         }
-        
+
         isMarket[pair] = true;
         emit MarketSet(pair, true);
     }
