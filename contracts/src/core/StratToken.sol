@@ -24,7 +24,7 @@ interface IFeeCollector {
 
 contract StratToken is ERC20, Ownable, ReentrancyGuard {
     // ====== Configuration ======
-    uint16 public constant MAX_FEE_BPS = 1000; // 10% hard cap
+    uint16 public constant MAX_FEE_BPS = 5000; // 50% hard cap
     uint16 public constant BPS_DENOM = 10000; // 100% in basis points
     uint16 public constant OPS_SHARE_BPS = 2000; // 20% of ETH to ops
     uint16 public constant COLLECTOR_SHARE_BPS = 8000; // 80% of ETH to collector
