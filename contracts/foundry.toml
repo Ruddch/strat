@@ -3,6 +3,7 @@ src = 'src'
 libs = ['lib']
 solc = "0.8.20"
 fallback_oz = true
+solc_version = "0.8.20"
 remappings = [
     "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"
 ]
