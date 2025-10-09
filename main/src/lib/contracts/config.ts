@@ -3,26 +3,28 @@ import { BUYBACK_MANAGER_ABI } from './buyback-manager-abi';
 import { FEE_COLLECTOR_ABI } from './fee-collector-abi';
 import { STRATEGY_CORE_ABI } from './strategy-core-abi';
 import { STRAT_TOKEN_ABI } from './strat-token-abi';
+import { ROUTER_ABI } from './router-abi';
 
 // Конфигурация контрактов
 export const CONTRACT_ADDRESSES = {
-  TREASURY: '0x9d5187BC1B838Eb8C80d482247B44e410200B8bA',
+  TREASURY: '0x7930f06a12416ad57faf5d32f6a742e641313e76',
   PENGU_TOKEN: '0x872309559f33bdb8785A69eaFf51BBD7430b3049', // MockPENGU
-  BUYBACK_MANAGER: '0xF210ACE50f88B984336EDF852ca42F9F74a91668',
-  FEE_COLLECTOR: '0xe86c1df3b9F815A9f1CdceA8eAB398503452CE44',
-  STRATEGY_CORE: '0xbdB6674F50e84fdedE0b616B50bc5aD1233FFc7D',
-  STRAT_TOKEN: '0x0f7D5A61F41E6061598c355529788d4D2F2cab05',
-  ROUTER: '0x96ff7D9dbf52FdcAe79157d3b249282c7FABd409',
+  BUYBACK_MANAGER: '0xe426b4a057f0d05c907788f76d42bad51023fe6b',
+  FEE_COLLECTOR: '0xa235d76f89d89187048b2abb41cf5ad9c746b18a',
+  STRATEGY_CORE: '0xe28ad1258cf2b0fc27da6ff4a586825bcb794cc5',
+  STRAT_TOKEN: '0xcceff0ba646de3e0471acbb68c575dd81b76449d',
+  WETH: '0x3439153EB7AF838Ad19d56E1571FBD09333C2809',
+  ROUTER: '0xad1eCa41E6F772bE3cb5A48A6141f9bcc1AF9F7c',
 } as const;
 
 // Конфигурация сетей
 export const NETWORK_CONFIG = {
-  // Abstract (замените на реальные параметры)
+  // Abstract Mainnet
   ABSTRACT: {
-    chainId: 11124, // Abstract testnet chain ID
-    name: 'Abstract Testnet',
-    rpcUrl: 'https://api.testnet.abs.xyz', // TODO: Заменить на реальный RPC URL
-    blockExplorer: 'https://testnet.abs.xyz', // TODO: Заменить на реальный explorer
+    chainId: 2741, // Abstract mainnet chain ID
+    name: 'Abstract Mainnet',
+    rpcUrl: 'https://api.mainnet.abs.xyz', // Abstract mainnet RPC URL
+    blockExplorer: 'https://abscan.org', // Abstract mainnet explorer
   },
 } as const;
 
@@ -33,7 +35,8 @@ export {
   BUYBACK_MANAGER_ABI, 
   FEE_COLLECTOR_ABI, 
   STRATEGY_CORE_ABI, 
-  STRAT_TOKEN_ABI 
+  STRAT_TOKEN_ABI,
+  ROUTER_ABI
 };
 
 // Типы для TypeScript

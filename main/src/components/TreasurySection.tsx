@@ -23,7 +23,6 @@ const TreasurySection: React.FC = () => {
       refetchInterval: 30000, // 30 seconds
     },
   });
-
   // Track loading states
   const [hasTreasuryLoaded, setHasTreasuryLoaded] = React.useState(false);
   const [hasTotalClaimedLoaded, setHasTotalClaimedLoaded] = React.useState(false);

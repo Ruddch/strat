@@ -8,7 +8,6 @@ export function Navigation() {
   const pathname = usePathname();
   const { activeSection } = useScroll();
   
-
   // Функция для скролла к секции
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -19,6 +18,7 @@ export function Navigation() {
       });
     }
   };
+
 
   return (
     <nav className="fixed top-0 left-0 bottom-0 w-64 z-50 pl-10 hidden lg:block">
@@ -43,6 +43,16 @@ export function Navigation() {
                 }`}
               >
                 Live
+              </button>
+              <button 
+                onClick={() => scrollToSection('trading')}
+                className={`block text-[14px] font-light leading-[150%] tracking-[0%] font-[family-name:var(--font-martian-mono)] hover:opacity-80 transition-opacity cursor-pointer ${
+                  activeSection === 'trading' 
+                    ? 'text-[var(--color-text-accent)]' 
+                    : 'text-white'
+                }`}
+              >
+                Trading
               </button>
               <button 
                 onClick={() => scrollToSection('take-profit')}

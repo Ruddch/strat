@@ -403,7 +403,7 @@ export function BackgroundEffects({
                 width: '100%',
                 height: '100%',
                 pointerEvents: 'none',
-                touchAction: 'auto', 
+                touchAction: 'auto' 
             }}
         >
             <canvas

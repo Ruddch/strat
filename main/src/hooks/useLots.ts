@@ -37,9 +37,18 @@ export const useLots = () => {
     const fetchEthPrice = async () => {
       try {
         setIsEthPriceLoading(true);
-        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+        const response = await fetch('https://backend.portal.abs.xyz/api/oracle/token/prices?contract=0x0000000000000000000000000000000000000000&period=all');
         const data = await response.json();
-        setEthPrice(data.ethereum.usd);
+        
+        // Получаем последнюю цену из массива 1h
+        const hourlyPrices = data.prices['0x0000000000000000000000000000000000000000']['1h'].prices;
+        if (hourlyPrices && hourlyPrices.length > 0) {
+          // Берем последний элемент массива (самая свежая цена)
+          const latestPrice = hourlyPrices[hourlyPrices.length - 1];
+          setEthPrice(latestPrice.priceUSD);
+        } else {
+          setEthPrice(0);
+        }
       } catch (error) {
         console.error('Error fetching ETH price:', error);
         setEthPrice(0);

@@ -8,6 +8,7 @@ import MetricsSection from "@/components/MetricsSection";
 import TakeProfitTable from "@/components/TakeProfitTable";
 import LastBuysTable from "@/components/LastBuysTable";
 import TreasurySection from "@/components/TreasurySection";
+import TradingSection from "@/components/TradingSection";
 import { useReadContract } from "wagmi";
 import { contractConfig } from "@/lib/contracts"; 
 
@@ -25,6 +26,7 @@ const ResponsiveBackgroundEffects = dynamic(() => import("@/components/ui/Respon
 export default function Home() {
   //const { address } = useAccount();
   const containerRef = useRef<HTMLDivElement>(null);
+  const tradingRef = useRef<HTMLDivElement>(null);
   const takeProfitRef = useRef<HTMLDivElement>(null);
   const lastBuysRef = useRef<HTMLDivElement>(null);
   const treasuryRef = useRef<HTMLDivElement>(null);
@@ -77,7 +79,7 @@ export default function Home() {
       }
     );
 
-    const sections = ['live', 'take-profit', 'last-buys', 'treasury'];
+    const sections = ['live', 'trading', 'take-profit', 'last-buys', 'treasury'];
     sections.forEach(sectionId => {
       const element = document.getElementById(sectionId);
       if (element) {
@@ -100,7 +102,7 @@ export default function Home() {
       <div className="ml-0 mr-0 lg:ml-64 lg:mr-64 font-[family-name:var(--font-avenue-mono)] h-screen no-scrollbar overflow-y-scroll snap-y snap-mandatory">
       {/* First Section - Original Dashboard */}
       <div id="live" ref={containerRef} className="relative grid grid-rows-[1fr_auto] min-h-screen snap-start">
-        <ResponsiveBackgroundEffects message="LAUNCH SOON" mobileFontSize={30} desktopFontSize={200} />
+        <ResponsiveBackgroundEffects message="LAUNCH THIS WEEK" mobileFontSize={30} desktopFontSize={200} />
         <main className="relative flex flex-col justify-between w-full h-full z-10 text-white">
           {/* Top Section - Metrics */}
           <MetricsSection />
@@ -137,15 +139,20 @@ export default function Home() {
         </main>
       </div>
 
-      {/* Second Section - Take Profit */}
+      {/* Second Section - Trading */}
+      <div id="trading" ref={tradingRef} className="relative min-h-screen z-10 text-white snap-start">
+        <TradingSection />
+      </div>
+
+      {/* Third Section - Take Profit */}
       <div id="take-profit" ref={takeProfitRef} className="relative min-h-screen z-10 text-white snap-start">
         <TakeProfitTable />
-</div>
-        <div id="last-buys" ref={lastBuysRef} className="relative min-h-screen z-10 text-white snap-start">
-          <LastBuysTable />
-        </div>
+      </div>
+      <div id="last-buys" ref={lastBuysRef} className="relative min-h-screen z-10 text-white snap-start">
+        <LastBuysTable />
+      </div>
 
-      {/* Third Section - Treasury */}
+      {/* Fourth Section - Treasury */}
       <div id="treasury" ref={treasuryRef} className="relative min-h-screen z-10 text-white snap-start">
         <TreasurySection />
       </div>
