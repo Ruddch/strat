@@ -180,8 +180,17 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         bool marketFrom = isMarket[from];
         bool marketTo = isMarket[to];
 
+        uint256 feeAmount = (amount * _totalFeeBps) / BPS_DENOM;
+        uint256 transferAmount = amount - feeAmount;
+
         // Apply anti-whale limits first
-        _enforceTransactionLimits(from, to, amount, marketFrom, marketTo);
+        _enforceTransactionLimits(
+            from,
+            to,
+            transferAmount,
+            marketFrom,
+            marketTo
+        );
 
         // Cache fee exemption status
         bool fromExempt = feeExempt[from];
@@ -204,10 +213,6 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
             return;
         }
 
-        uint256 feeAmount = (amount * _totalFeeBps) / BPS_DENOM;
-        uint256 transferAmount = amount - feeAmount;
-
-        // Transfer net amount to recipient
         super._update(from, to, transferAmount);
         super._update(from, address(this), feeAmount);
 
@@ -219,21 +224,23 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
      * @param tokenAmount Amount of tokens to swap
      * @return ethOut Amount of ETH received from swap
      */
-    function _internalSwap(uint256 tokenAmount) private returns (uint256 ethOut) {
+    function _internalSwap(
+        uint256 tokenAmount
+    ) private returns (uint256 ethOut) {
         if (inSwap) {
             return 0;
         }
-        
+
         inSwap = true;
-        
+
         _approve(address(this), address(router), tokenAmount);
-        
+
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = WETH;
-        
+
         uint256 balanceBefore = address(this).balance;
-        
+
         try
             router.swapExactTokensForETHSupportingFeeOnTransferTokens(
                 tokenAmount,
@@ -247,7 +254,7 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         } catch {
             ethOut = 0;
         }
-        
+
         inSwap = false;
         return ethOut;
     }
@@ -376,19 +383,19 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
      */
     function createPair() external onlyOwner {
         if (pair != address(0)) revert InvalidInput();
-        
+
         address factory = router.factory();
         address existingPair = IUniswapV2Factory(factory).getPair(
             address(this),
             WETH
         );
-        
+
         if (existingPair != address(0)) {
             pair = existingPair;
         } else {
             pair = IUniswapV2Factory(factory).createPair(address(this), WETH);
         }
-        
+
         isMarket[pair] = true;
         emit MarketSet(pair, true);
     }
