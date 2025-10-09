@@ -12,7 +12,7 @@ interface SellInputProps {
 
 export function SellInput({ onSell }: SellInputProps) {
   const [amount, setAmount] = useState("");
-  const { sellTokens, isPending, error, allowance } = useSellTokens();
+  const { isPending, error, allowance } = useSellTokens();
   const { address, isConnected } = useAccount();
 
   // Получаем баланс STRAT токенов

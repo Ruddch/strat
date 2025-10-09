@@ -10,7 +10,7 @@ interface BuyInputProps {
 
 export function BuyInput({ onBuy }: BuyInputProps) {
   const [amount, setAmount] = useState("");
-  const { buyTokens, isPending, error } = useBuyTokens();
+  const { isPending, error } = useBuyTokens();
   const { isConnected } = useAccount();
 
   const handleBuy = async () => {
