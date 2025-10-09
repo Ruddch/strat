@@ -6,39 +6,43 @@ import { STRATEGY_CORE_ABI } from './strategy-core-abi';
 import { STRAT_TOKEN_ABI } from './strat-token-abi';
 import { CONTRACT_ADDRESSES } from './config';
 
-// Утилиты для работы с контрактами
-
-/**
- * Форматирует баланс токенов из wei в читаемый вид
- */
 export function formatTokenBalance(balance: bigint, decimals: number = 18): string {
   const formatted = formatUnits(balance, decimals);
-  const num = parseFloat(formatted);
-  return num.toFixed(2);
+
+  if (parseFloat(formatted) >= 0.01) {
+    return parseFloat(formatted).toFixed(2);
+  }
+  
+  const decimalIndex = formatted.indexOf('.');
+  if (decimalIndex === -1) {
+    return formatted;
+  }
+  
+  const afterDecimal = formatted.substring(decimalIndex + 1);
+  const firstNonZeroIndex = afterDecimal.search(/[1-9]/);
+  
+  if (firstNonZeroIndex === -1) {
+    return "0.0000";
+  }
+  
+  const zeroCount = firstNonZeroIndex;
+  
+  const significantDigits = afterDecimal.substring(firstNonZeroIndex, firstNonZeroIndex + 2);
+  
+  return `0.0${getSubscript(zeroCount)}${significantDigits}`;
 }
 
-/**
- * Парсит строку токенов в wei
- */
 export function parseTokenAmount(amount: string, decimals: number = 18): bigint {
-  // Parse the amount as a string to preserve precision
   return parseUnits(amount, decimals);
 }
 
-/**
- * Форматирует цену токена в компактном виде для очень маленьких значений
- * Например: 0.0000001766 -> "0.0₆1766"
- */
 export function formatTokenPrice(price: bigint, decimals: number = 18): string {
   const priceStr = formatUnits(price, decimals);
   
-  // Если число >= 0.0001, используем обычное форматирование
   if (parseFloat(priceStr) >= 0.0001) {
     return parseFloat(priceStr).toFixed(4);
   }
   
-  // Для очень маленьких чисел работаем со строкой напрямую
-  // Находим позицию первой значащей цифры после десятичной точки
   const decimalIndex = priceStr.indexOf('.');
   if (decimalIndex === -1) {
     return priceStr;
@@ -51,42 +55,27 @@ export function formatTokenPrice(price: bigint, decimals: number = 18): string {
     return "0.0000";
   }
   
-  // Количество нулей после десятичной точки
   const zeroCount = firstNonZeroIndex;
   
-  // Берем первые 4 значащие цифры
   const significantDigits = afterDecimal.substring(firstNonZeroIndex, firstNonZeroIndex + 4);
   
-  // Формируем строку в формате "0.0ₓYYYY"
   return `0.0${getSubscript(zeroCount)}${significantDigits}`;
 }
 
-/**
- * Возвращает подстрочный индекс для числа
- */
 function getSubscript(num: number): string {
   const subscripts = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
   return num.toString().split('').map(digit => subscripts[parseInt(digit)]).join('');
 }
 
-/**
- * Форматирует адрес для отображения (первые 6 и последние 4 символа)
- */
 export function formatAddress(address: string): string {
   if (!address) return '';
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-/**
- * Проверяет валидность Ethereum адреса
- */
 export function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address);
 }
 
-/**
- * Конфигурация для wagmi hooks
- */
 export const contractConfig = {
   treasury: {
     address: CONTRACT_ADDRESSES.TREASURY as `0x${string}`,
@@ -114,12 +103,9 @@ export const contractConfig = {
   },
 } as const;
 
-/**
- * Константы для работы с эпохами
- */
 export const EPOCH_CONSTANTS = {
   DURATION_DAYS: 7,
-  DURATION_SECONDS: 7 * 24 * 60 * 60, // 7 дней в секундах
-  CLAIMABLE_EPOCHS: 1, // Только предыдущая эпоха claimable
-  EXPIRED_EPOCHS: 3, // Эпохи старше 3 периодов считаются expired
+  DURATION_SECONDS: 7 * 24 * 60 * 60,
+  CLAIMABLE_EPOCHS: 1,
+  EXPIRED_EPOCHS: 3,
 } as const;

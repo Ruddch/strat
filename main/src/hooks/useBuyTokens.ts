@@ -15,16 +15,13 @@ export function useBuyTokens() {
 
     const ethAmountWei = parseEther(ethAmount);
     
-    // Путь для свапа: ETH -> STRAT Token
     const path = [
         CONTRACT_ADDRESSES.WETH,
         CONTRACT_ADDRESSES.STRAT_TOKEN
     ];
 
-    // Минимальное количество токенов (5% slippage)
-    const amountOutMin = BigInt(0); // Можно добавить расчет минимального количества
+    const amountOutMin = BigInt(0); 
 
-    // Дедлайн (20 минут)
     const deadline = Math.floor(Date.now() / 1000) + 1200;
 
     try {

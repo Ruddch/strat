@@ -91,7 +91,7 @@ export function SellInput({ onSell }: SellInputProps) {
       </div>
       <button 
         onClick={handleSell}
-        className="block w-full py-4 px-2 flex items-center justify-center gap-2.5 transition-colors hover:opacity-80 cursor-pointer font-[family-name:var(--font-martian-mono)] text-sm font-light leading-[150%] tracking-[0%] text-center disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+        className="block w-full py-4 px-2 flex items-center justify-center gap-2.5 transition-colors hover:opacity-80 cursor-pointer font-[family-name:var(--font-martian-mono)] text-sm font-light leading-[150%] tracking-[0%] text-center disabled:opacity-50 disabled:cursor-not-allowed mt-7 md:mt-4"
         style={{
           backgroundColor: 'rgba(0, 255, 251, 1)',
           color: 'rgba(1, 27, 35, 1)'
