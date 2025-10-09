@@ -32,7 +32,7 @@ export default function TradingSection() {
       
       <div className="flex flex-row justify-center items-start">
         {/* Левая колонка - Покупка */}
-        <div className="w-full max-w-md p-4 pt-8 pb-8 border-r border-b border-[var(--color-border-accent)] ">
+        <div className="w-full p-4 pt-8 pb-8 border-r border-b border-[var(--color-border-accent)] ">
           {/* Секция покупки */}
           <div className="">
             
@@ -45,7 +45,7 @@ export default function TradingSection() {
         </div>
 
         {/* Правая колонка - Продажа */}
-        <div className="w-full max-w-md p-4 pt-8 pb-8 border-b border-[var(--color-border-accent)]">
+        <div className="w-full p-4 pt-8 pb-8 border-b border-[var(--color-border-accent)]">
           {/* Секция продажи */}
           <div className="">
             <h3 className="mb-4 text-lg font-light text-white font-[family-name:var(--font-martian-mono)]">
