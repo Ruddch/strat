@@ -23,7 +23,7 @@ contract BuybackManager is Ownable, Pausable, ReentrancyGuard {
     uint256 public constant MAX_SLIPPAGE_BPS = 6000;           // 60% max slippage
     uint256 public constant BPS_DENOMINATOR = 10000;
     uint256 public constant MAX_CALLER_REWARD_BPS = 100;      // 1% max caller reward
-    uint256 public constant MIN_BUYBACK_THRESHOLD = 0.001 ether;  // Minimum 0.001 ETH
+    uint256 public constant MIN_BUYBACK_THRESHOLD = 0.000001 ether;  // Minimum 0.001 ETH
     uint256 public constant MAX_BUYBACK_THRESHOLD = 100 ether;    // Maximum 100 ETH
     uint256 public constant MAX_DEADLINE_BUFFER = 300;        // 5 minutes
     

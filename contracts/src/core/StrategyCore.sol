@@ -46,6 +46,7 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
     address public feeCollector;
     IUniswapV2Router02 public router;
     address public buybackManager;
+    address public coordinator;
 
     // Lot management
     mapping(uint256 => Lot) public lots;
@@ -91,6 +92,8 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
     );
 
     event ConfigUpdated(uint256 maxLotsPerExecution, bool tpExecutionEnabled);
+
+    event CoordinatorUpdated(address indexed newCoordinator);
 
     event BuybackTransferFailed(uint256 ethAmount, address buybackManager);
 
@@ -140,6 +143,11 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
         _;
     }
 
+    modifier onlyCoordinatorOrOwner() {
+        require(msg.sender == owner() || msg.sender == coordinator, "Not authorized");
+        _;
+    }
+
     // ==================== CONSTRUCTOR ====================
 
     constructor(
@@ -169,7 +177,7 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
      * @notice Updates PENGU price from backend oracle
      * @param newPriceWei New price in wei per PENGU token
      */
-    function updatePenguPrice(uint256 newPriceWei) external onlyOwner {
+    function updatePenguPrice(uint256 newPriceWei) external onlyCoordinatorOrOwner {
         if (newPriceWei == 0)
             revert PriceOutOfBounds(newPriceWei, 1, type(uint256).max);
         if (newPriceWei > 1000 ether)
@@ -623,6 +631,12 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
         address oldFeeCollector = feeCollector;
         feeCollector = newFeeCollector;
         emit FeeCollectorUpdated(oldFeeCollector, newFeeCollector);
+    }
+
+    function setCoordinator(address newCoordinator) external onlyOwner {
+        require(newCoordinator != address(0), "Zero address");
+        coordinator = newCoordinator;
+        emit CoordinatorUpdated(newCoordinator);
     }
 
     /**
