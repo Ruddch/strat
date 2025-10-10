@@ -37,7 +37,9 @@ export const useLots = () => {
     const fetchEthPrice = async () => {
       try {
         setIsEthPriceLoading(true);
-        const response = await fetch('https://backend.portal.abs.xyz/api/oracle/token/prices?contract=0x0000000000000000000000000000000000000000&period=all');
+        const response = await fetch('https://backend.portal.abs.xyz/api/oracle/token/prices?contract=0x0000000000000000000000000000000000000000&period=all', {
+          credentials: 'omit'
+        });
         const data = await response.json();
         
         // Получаем последнюю цену из массива 1h
