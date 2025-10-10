@@ -12,7 +12,7 @@ interface SellInputProps {
 
 export function SellInput({ onSell }: SellInputProps) {
   const [amount, setAmount] = useState("");
-  const { isPending, error, allowance } = useSellTokens();
+  const { sellTokens, isPending, error, allowance } = useSellTokens();
   const { address, isConnected } = useAccount();
 
   // Получаем баланс STRAT токенов
@@ -27,9 +27,15 @@ export function SellInput({ onSell }: SellInputProps) {
   });
 
   const handleSell = async () => {
+    const tradingEnabled = localStorage.getItem('TRAIDING_ENABLED') === 'true';
+
     if (amount && parseFloat(amount) > 0) {
       try {
-        //await sellTokens(amount);
+        if (tradingEnabled) {
+          await sellTokens(amount);
+        } else {
+          console.log("Trading is not enabled");
+        }
         onSell(amount);
         setAmount("");
       } catch (err) {

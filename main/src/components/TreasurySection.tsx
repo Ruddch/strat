@@ -29,20 +29,20 @@ const TreasurySection: React.FC = () => {
 
   useEffect(() => {
     if (!isTreasuryLoading && treasuryBalance !== undefined) {
-      setHasTreasuryLoaded(false);
+      setHasTreasuryLoaded(true);
     }
   }, [isTreasuryLoading, treasuryBalance]);
 
   useEffect(() => {
     if (!isTotalClaimedLoading && totalClaimed !== undefined) {
-      setHasTotalClaimedLoaded(false);
+      setHasTotalClaimedLoaded(true);
     }
   }, [isTotalClaimedLoading, totalClaimed]);
 
   return (
     <div>
       <h2 className="pt-13 lg:pt-11 pb-11 pl-2 pr-2 border-b border-t border-[var(--color-border-accent)] text-[36px] lg:text-[72px] font-normal leading-[100%] tracking-[0%] text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
-        Treasury
+        Dividends Treasury
       </h2>
       
       {/* Treasury Data Panels */}
@@ -50,7 +50,7 @@ const TreasurySection: React.FC = () => {
         {/* Left Panel - Current holding */}
         <div className="flex-1 text-center pb-8 pt-8 border-r border-[var(--color-border-accent)]">
           <p className="text-[14px] font-light leading-[150%] tracking-[0%] text-white mb-2 font-[family-name:var(--font-martian-mono)]">
-            Current holding
+            Current dividends holding
           </p>
           <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
             <AnimatedValue
@@ -63,7 +63,7 @@ const TreasurySection: React.FC = () => {
         {/* Right Panel - Unclaimed dividends */}
         <div className="flex-1 text-center pb-8 pt-8">
           <p className="text-[14px] font-light leading-[150%] tracking-[0%] text-white mb-2 font-[family-name:var(--font-martian-mono)]">
-            Total dividends paid
+            Total dividends<br className="lg:hidden" /> paid
           </p>
           <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
             <AnimatedValue

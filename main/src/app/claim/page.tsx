@@ -123,13 +123,13 @@ export default function ClaimPage() {
 
   React.useEffect(() => {
     if (!isClaimedLoading && userClaimedDividends !== undefined) {
-      setHasInitiallyLoaded(false);
+      setHasInitiallyLoaded(true);
     }
   }, [isClaimedLoading, userClaimedDividends]);
 
   React.useEffect(() => {
     if (!isCurrentEpochLoading && userCurrentEpochDividends !== undefined) {
-      setHasCurrentEpochLoaded(false);
+      setHasCurrentEpochLoaded(true);
     }
   }, [isCurrentEpochLoading, userCurrentEpochDividends]);
 

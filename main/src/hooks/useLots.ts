@@ -37,17 +37,15 @@ export const useLots = () => {
     const fetchEthPrice = async () => {
       try {
         setIsEthPriceLoading(true);
-        const response = await fetch('https://backend.portal.abs.xyz/api/oracle/token/prices?contract=0x0000000000000000000000000000000000000000&period=all', {
-          credentials: 'omit'
-        });
+        const response = await fetch('https://api.dexscreener.com/latest/dex/tokens/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2');
         const data = await response.json();
         
-        // Получаем последнюю цену из массива 1h
-        const hourlyPrices = data.prices['0x0000000000000000000000000000000000000000']['1h'].prices;
-        if (hourlyPrices && hourlyPrices.length > 0) {
-          // Берем последний элемент массива (самая свежая цена)
-          const latestPrice = hourlyPrices[hourlyPrices.length - 1];
-          setEthPrice(latestPrice.priceUSD);
+        if (data.pairs && data.pairs.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const bestPair = data.pairs.reduce((prev: any, current: any) => 
+            parseFloat(prev.liquidity?.usd || '0') > parseFloat(current.liquidity?.usd || '0') ? prev : current
+          );
+          setEthPrice(parseFloat(bestPair.priceUsd || '0'));
         } else {
           setEthPrice(0);
         }
@@ -61,7 +59,7 @@ export const useLots = () => {
 
     fetchEthPrice();
     // Update price every 30 seconds
-    const interval = setInterval(fetchEthPrice, 30000);
+    const interval = setInterval(fetchEthPrice, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -97,26 +95,24 @@ export const useLots = () => {
 
   // Get 4 lots closest to sale (lowest avgPriceWeiPerPengu)
   const closestLots = useMemo((): LotWithId[] => {
-    return [];
-    // return processLots
-    //   .sort((a, b) => {
-    //     if (a.avgPriceWeiPerPengu < b.avgPriceWeiPerPengu) return -1;
-    //     if (a.avgPriceWeiPerPengu > b.avgPriceWeiPerPengu) return 1;
-    //     return 0;
-    //   })
-    //   .slice(0, 4);
+    return processLots
+      .sort((a, b) => {
+        if (a.avgPriceWeiPerPengu < b.avgPriceWeiPerPengu) return -1;
+        if (a.avgPriceWeiPerPengu > b.avgPriceWeiPerPengu) return 1;
+        return 0;
+      })
+      .slice(0, 4);
   }, [processLots]);
 
   // Get 4 latest lots (sorted by timestamp descending)
   const lastBuys = useMemo((): LotWithId[] => {
-    return [];
-    // return processLots
-    //   .sort((a, b) => {
-    //     if (a.timestamp > b.timestamp) return -1;
-    //     if (a.timestamp < b.timestamp) return 1;
-    //     return 0;
-    //   })
-    //   .slice(0, 4);
+    return processLots
+      .sort((a, b) => {
+        if (a.timestamp > b.timestamp) return -1;
+        if (a.timestamp < b.timestamp) return 1;
+        return 0;
+      })
+      .slice(0, 4);
   }, [processLots]);
 
   return {

@@ -10,13 +10,18 @@ interface BuyInputProps {
 
 export function BuyInput({ onBuy }: BuyInputProps) {
   const [amount, setAmount] = useState("");
-  const { isPending, error } = useBuyTokens();
+  const { buyTokens, isPending, error } = useBuyTokens();
   const { isConnected } = useAccount();
 
   const handleBuy = async () => {
+    const tradingEnabled = localStorage.getItem('TRAIDING_ENABLED') === 'true';
     if (amount && parseFloat(amount) > 0) {
       try {
-        //await buyTokens(amount);
+        if (tradingEnabled) {
+          await buyTokens(amount);
+        } else {
+          console.log("Trading is not enabled");
+        }
         onBuy(amount);
         setAmount("");
       } catch (err) {
