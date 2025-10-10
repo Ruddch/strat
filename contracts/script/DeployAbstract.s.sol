@@ -28,7 +28,7 @@ contract DeployMinimalScript is Script {
         console.log("Treasury:", address(treasury));
         
         StratToken token = new StratToken(
-            "StratToken", "STRAT", 1000000000000000000000000000,
+            "TEST-113945", "113945", 1000000000000000000000000000,
             payable(deployer), deployer, deployer, router, weth
         );
         console.log("StratToken:", address(token));

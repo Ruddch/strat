@@ -22,8 +22,8 @@ contract BuybackManager is Ownable, Pausable, ReentrancyGuard {
     uint256 public constant MAX_SLIPPAGE_BPS = 6000; // 60% max slippage
     uint256 public constant BPS_DENOMINATOR = 10000;
     uint256 public constant MAX_CALLER_REWARD_BPS = 100;      // 1% max caller reward
-    uint256 public constant MIN_BUYBACK_THRESHOLD = 0.000001 ether;  // Minimum 0.001 ETH
-    uint256 public constant MAX_BUYBACK_THRESHOLD = 100 ether;    // Maximum 100 ETH
+    uint256 public constant MIN_BUYBACK_THRESHOLD = 0.001 ether;  // Minimum 0.001 ETH
+    uint256 public constant MAX_BUYBACK_THRESHOLD = 10 ether;    // Maximum 100 ETH
     uint256 public constant MAX_DEADLINE_BUFFER = 300;        // 5 minutes
     
     // ==================== STATE VARIABLES ====================
@@ -35,7 +35,7 @@ contract BuybackManager is Ownable, Pausable, ReentrancyGuard {
 
     // Configuration
     uint256 public buybackThreshold = 0.01 ether; // Minimum ETH to trigger buyback
-    uint256 public slippageBps = 300; // 3% slippage tolerance
+    uint256 public slippageBps = 1500; // 3% slippage tolerance
     uint256 public callerRewardBps = 50; // 0.5% caller reward
     bool public autoBuybackEnabled = true; // Auto buyback on receive
 
@@ -127,7 +127,6 @@ contract BuybackManager is Ownable, Pausable, ReentrancyGuard {
         strategyCore = _strategyCore;
         router = IUniswapV2Router02(_router);
 
-        // Start unpaused for immediate operation
     }
 
     // ==================== MAIN FUNCTIONS ====================
@@ -154,7 +153,7 @@ contract BuybackManager is Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-     * @notice Manually trigger buyback (callable by anyone)
+     * @notice Manually trigger buyback
      * @dev Caller receives reward for gas compensation
      */
     function triggerBuyback() external whenNotPaused nonReentrant {
@@ -252,7 +251,7 @@ contract BuybackManager is Ownable, Pausable, ReentrancyGuard {
             value: ethAmount
         }(minSTRAT, path, address(this), block.timestamp + MAX_DEADLINE_BUFFER);
 
-        // Calculate actual STRAT received (handles fee-on-transfer)
+        // Calculate actual STRAT received
         uint256 stratBalanceAfter = IERC20(stratTokenAddress).balanceOf(
             address(this)
         );
@@ -545,7 +544,7 @@ contract BuybackManager is Ownable, Pausable, ReentrancyGuard {
         uint256 originalThreshold = buybackThreshold;
         buybackThreshold = 0; // Temporarily set to 0
 
-        _executeBuyback(owner()); // Owner gets any caller reward
+        _executeBuyback(owner());
 
         buybackThreshold = originalThreshold; // Restore original threshold
     }

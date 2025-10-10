@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
- * @title Treasury Contract for Weighted Dividend Distribution (off-chain snapshots)
+ * @title Treasury Contract for Weighted Dividend Distribution
  * @dev
  */
 contract Treasury is Ownable, Pausable, ReentrancyGuard {
@@ -29,8 +29,8 @@ contract Treasury is Ownable, Pausable, ReentrancyGuard {
     }
 
     struct UserClaimInfo {
-        uint256 weightedBalance; // OFFCHAIN
-        uint256 claimAmount; // OFFCHAIN
+        uint256 weightedBalance;
+        uint256 claimAmount;
         bool hasClaimed;
     }
 

@@ -27,8 +27,8 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
     }
 
     struct TP {
-        uint32 multiplierX1000; // Multiplier * 1000 (e.g., 1250 = 1.25x)
-        uint16 percentBps; // Percentage in basis points (e.g., 2500 = 25%)
+        uint32 multiplierX1000; // Multiplier * 1000
+        uint16 percentBps; // Percentage in basis points
     }
 
     // ==================== CONSTANTS ====================
@@ -59,7 +59,7 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
     uint256 public tpLadderSum; // Sum of all percentBps (should equal 10000)
 
     // Oracle Price System
-    uint256 public penguOraclePrice; // Current PENGU price from backend (wei per token)
+    uint256 public penguOraclePrice;
     uint256 public penguPriceLastUpdated; // Timestamp of last price update
     uint256 public constant PRICE_STALE_TIMEOUT = 30 minutes; // Price staleness threshold
 
@@ -174,7 +174,7 @@ contract StrategyCore is Ownable, Pausable, ReentrancyGuard {
     // ==================== ORACLE PRICE FUNCTIONS ====================
 
     /**
-     * @notice Updates PENGU price from backend oracle
+     * @notice Updates PENGU price
      * @param newPriceWei New price in wei per PENGU token
      */
     function updatePenguPrice(uint256 newPriceWei) external onlyCoordinatorOrOwner {

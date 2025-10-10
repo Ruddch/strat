@@ -43,13 +43,13 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
     bool public tradingEnabled = false;
 
     mapping(address => bool) public feeExempt;
-    mapping(address => bool) public isMarket; // mark the pair (or more if needed)
+    mapping(address => bool) public isMarket; // mark the pair
 
     // swap-back for accumulated tokens
     bool public swapEnabled = true;
     bool private inSwap;
-    uint256 public swapThreshold = 100000 * 10 ** 18; // 1000 tokens threshold
-    uint256 public maxSwapAmount = 150000 * 10 ** 18; // 1M tokens max per swap
+    uint256 public swapThreshold = 200000 * 10 ** 18; // tokens threshold
+    uint256 public maxSwapAmount = 250000 * 10 ** 18; // tokens max per swap
 
     // anti-whale limits
     uint256 public maxWallet; // in token wei
@@ -109,12 +109,12 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
     constructor(
         string memory name_,
         string memory symbol_,
-        uint256 initialSupply, // e.g. 1_000_000_000 * 1e18
+        uint256 initialSupply,
         address payable opsWallet_,
         address feeCollector_,
         address buybackManager_,
-        address router_, // Router address for the network
-        address weth_ // WETH address for the network
+        address router_,
+        address weth_
     ) ERC20(name_, symbol_) Ownable(msg.sender) {
         if (
             opsWallet_ == address(0) ||
@@ -132,7 +132,6 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
 
         // Create the V2 pair (token <-> WETH)
         pair = address(0); // Will be created after deployment
-        // isMarket[pair] = true; // Will be set when pair is created
 
         // Mint supply to deployer
         _mint(msg.sender, initialSupply);
@@ -150,7 +149,7 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
         maxWallet = (initialSupply * 2) / 100; // 2% of supply
         maxTx = (initialSupply * 1) / 100; // 1% of supply
 
-        // Limit exemptions (DO NOT exempt the pair)
+        // Limit exemptions
         limitExempt[owner()] = true;
         limitExempt[address(this)] = true;
         limitExempt[opsWallet] = true;
@@ -321,7 +320,6 @@ contract StratToken is ERC20, Ownable, ReentrancyGuard {
 
         // Check max wallet limit for recipients (except when selling to pair)
         if (!marketTo && to != address(0)) {
-            // Added to != address(0) check
             uint256 potentialFee = 0;
             bool hasMarketFee = !feeExempt[from] &&
                 !feeExempt[to] &&

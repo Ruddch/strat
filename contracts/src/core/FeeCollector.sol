@@ -70,7 +70,7 @@ contract FeeCollector is Ownable, ReentrancyGuard {
 
     // Configuration parameters
     uint256 public threshold = 1 ether; // Minimum ETH to trigger processFees
-    uint256 public useAmount = 0.9 ether; // Amount to use per process
+    uint256 public useAmount = 0.975 ether; // Amount to use per process
 
     // Distribution ratios (basis points)
     uint256 public constant STRATEGY_RATIO = 7000; // 70%
