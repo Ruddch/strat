@@ -1,12 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { WalletBalance } from "@/components/wallet/WalletBalance";
 import { BuyInput } from "@/components/wallet/BuyInput";
 import { StratTokenBalance } from "@/components/wallet/StratTokenBalance";
 import { SellInput } from "@/components/wallet/SellInput";
+import { CONTRACT_ADDRESSES } from "@/lib/contracts/config";
 
 export default function TradingSection() {
-  // Функция обработки покупки
+  const [copied, setCopied] = useState(false);
+
   const handleBuy = async (amount: string) => {
     try {
       console.log(`Successfully bought tokens for ${amount} ETH`);
@@ -15,12 +18,21 @@ export default function TradingSection() {
     }
   };
 
-  // Функция обработки продажи
   const handleSell = async (amount: string) => {
     try {
       console.log(`Successfully sold ${amount} tokens`);
     } catch (err) {
       console.error("Failed to sell tokens:", err);
+    }
+  };
+
+  const copyContractAddress = async () => {
+    try {
+      //await navigator.clipboard.writeText(CONTRACT_ADDRESSES.STRAT_TOKEN);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy address:", err);
     }
   };
 
@@ -31,9 +43,7 @@ export default function TradingSection() {
       </h2>
       
       <div className="flex flex-row justify-center items-start">
-        {/* Левая колонка - Покупка */}
         <div className="w-full p-4 pt-8 pb-8 border-r border-b border-[var(--color-border-accent)] ">
-          {/* Секция покупки */}
           <div className="">
             
             <h3 className=" mb-4 text-lg font-light text-white font-[family-name:var(--font-martian-mono)]">
@@ -44,15 +54,31 @@ export default function TradingSection() {
           </div>
         </div>
 
-        {/* Правая колонка - Продажа */}
         <div className="w-full p-4 pt-8 pb-8 border-b border-[var(--color-border-accent)]">
-          {/* Секция продажи */}
           <div className="">
             <h3 className="mb-4 text-lg font-light text-white font-[family-name:var(--font-martian-mono)]">
               Sell $PST
             </h3>
             <StratTokenBalance />
             <SellInput onSell={handleSell} />
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 border-b border-[var(--color-border-accent)]">
+        <div className="flex flex-col items-center space-y-2">
+          <h4 className="text-[20px] font-light text-white font-[family-name:var(--font-martian-mono)]">
+            Contract Address
+          </h4>
+          <div onClick={copyContractAddress} className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity">
+            <code className="text-[16px] font-mono text-[var(--color-text-accent)] bg-black/20 px-2 py-1 rounded border border-[var(--color-border-accent)]">
+              0x************************
+            </code>
+            {copied && (
+              <span className="text-xs text-green-400 font-[family-name:var(--font-martian-mono)]">
+                Copied!
+              </span>
+            )}
           </div>
         </div>
       </div>
