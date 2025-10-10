@@ -82,7 +82,7 @@ export function BuyInput({ onBuy }: BuyInputProps) {
       </button>
       {error && (
         <div className="text-red-500 text-[10px] mt-1 font-[family-name:var(--font-martian-mono)]">
-          Error: {error.message}
+          Error
         </div>
       )}
     </div>
