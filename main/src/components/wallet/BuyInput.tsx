@@ -10,13 +10,18 @@ interface BuyInputProps {
 
 export function BuyInput({ onBuy }: BuyInputProps) {
   const [amount, setAmount] = useState("");
-  const { isPending, error } = useBuyTokens();
+  const { buyTokens, isPending, error } = useBuyTokens();
   const { isConnected } = useAccount();
 
   const handleBuy = async () => {
+    const tradingEnabled = localStorage.getItem('TRAIDING_ENABLED') === 'true';
     if (amount && parseFloat(amount) > 0) {
       try {
-        //await buyTokens(amount);
+        if (tradingEnabled) {
+          await buyTokens(amount);
+        } else {
+          console.log("Trading is not enabled");
+        }
         onBuy(amount);
         setAmount("");
       } catch (err) {
@@ -77,7 +82,7 @@ export function BuyInput({ onBuy }: BuyInputProps) {
       </button>
       {error && (
         <div className="text-red-500 text-[10px] mt-1 font-[family-name:var(--font-martian-mono)]">
-          Error: {error.message}
+          Error
         </div>
       )}
     </div>

@@ -60,7 +60,6 @@ const AnimatedValue: React.FC<AnimatedValueProps> = ({
     }
 
     const finalValueNum = parseFloat(finalValue.replace(/[^\d.]/g, ''));
-    console.log('finalValueNum', finalValueNum);
     if (isNaN(finalValueNum)) {
       return;
     }

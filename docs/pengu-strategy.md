@@ -49,7 +49,7 @@ To ensure fair distribution and prevent market manipulation, **PENGU Strategy** 
 | Limit Type | Percentage | Purpose |
 |-------------|-------------|----------|
 | **Max Transaction** | **1%** | Maximum tokens that can be transferred in a single transaction. |
-| **Max Wallet** | **3%** | Maximum tokens any single wallet can hold. |
+| **Max Wallet** | **2%** | Maximum tokens any single wallet can hold. |
 
 These limits apply to all market transactions and can be adjusted by the protocol owner if needed. Certain addresses (team wallets, contracts) are exempt from these limits to ensure smooth protocol operations.
 

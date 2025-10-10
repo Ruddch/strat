@@ -12,7 +12,7 @@ interface SellInputProps {
 
 export function SellInput({ onSell }: SellInputProps) {
   const [amount, setAmount] = useState("");
-  const { isPending, error, allowance } = useSellTokens();
+  const { sellTokens, isPending, error, allowance } = useSellTokens();
   const { address, isConnected } = useAccount();
 
   // Получаем баланс STRAT токенов
@@ -27,9 +27,15 @@ export function SellInput({ onSell }: SellInputProps) {
   });
 
   const handleSell = async () => {
+    const tradingEnabled = localStorage.getItem('TRAIDING_ENABLED') === 'true';
+
     if (amount && parseFloat(amount) > 0) {
       try {
-        //await sellTokens(amount);
+        if (tradingEnabled) {
+          await sellTokens(amount);
+        } else {
+          console.log("Trading is not enabled");
+        }
         onSell(amount);
         setAmount("");
       } catch (err) {
@@ -91,7 +97,7 @@ export function SellInput({ onSell }: SellInputProps) {
       </div>
       <button 
         onClick={handleSell}
-        className="block w-full py-4 px-2 flex items-center justify-center gap-2.5 transition-colors hover:opacity-80 cursor-pointer font-[family-name:var(--font-martian-mono)] text-sm font-light leading-[150%] tracking-[0%] text-center disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+        className="block w-full py-4 px-2 flex items-center justify-center gap-2.5 transition-colors hover:opacity-80 cursor-pointer font-[family-name:var(--font-martian-mono)] text-sm font-light leading-[150%] tracking-[0%] text-center disabled:opacity-50 disabled:cursor-not-allowed mt-7 md:mt-4"
         style={{
           backgroundColor: 'rgba(0, 255, 251, 1)',
           color: 'rgba(1, 27, 35, 1)'
@@ -102,7 +108,7 @@ export function SellInput({ onSell }: SellInputProps) {
       </button>
       {error && (
         <div className="text-red-500 text-[10px] mt-1 font-[family-name:var(--font-martian-mono)]">
-          Error: {error.message}
+          Error
         </div>
       )}
     </div>
