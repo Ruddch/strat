@@ -5,7 +5,7 @@ import { WalletBalance } from "@/components/wallet/WalletBalance";
 import { BuyInput } from "@/components/wallet/BuyInput";
 import { StratTokenBalance } from "@/components/wallet/StratTokenBalance";
 import { SellInput } from "@/components/wallet/SellInput";
-import { CONTRACT_ADDRESSES } from "@/lib/contracts/config";
+// import { CONTRACT_ADDRESSES } from "@/lib/contracts/config";
 
 export default function TradingSection() {
   const [copied, setCopied] = useState(false);
