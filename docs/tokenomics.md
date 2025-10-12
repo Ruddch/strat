@@ -51,7 +51,7 @@ The Treasury (8%) is divided into two sub-pools:
 |------------|--------|
 | **Transaction Fee** | 10% |
 | **Treasury Split** | 5.6% Buyback / 2.4% Rewards |
-| **Resale Markup** | ×1.2 (20% profit) |
+| **Resale Markup** | ×1.1 (10% profit) |
 | **Reward Epoch** | 7 days |
 | **Burn Mechanism** | Automatic buyback & burn of PST |
 | **Token Standard** | ERC-20 (Abstract-compatible) |

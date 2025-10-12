@@ -59,7 +59,7 @@ These limits apply to all market transactions and can be adjusted by the protoco
 
 1. **Accumulation** — Treasury collects fees from trades.  
 2. **Buyback** — Once the buy threshold is reached, the protocol executes a **$PENGU buyback** at market price.  
-3. **Resale with Markup** — Purchased $PENGU is automatically listed with a **×1.2 markup (20% premium)**.  
+3. **Resale with Markup** — Purchased $PENGU is automatically listed with a **×1.1 markup (10% premium)**.  
 4. **Buyback & Burn** — After resale, proceeds are used to **buy back and burn PENGU Strategy tokens**, reducing total supply.
 
 > 🔥 Each cycle creates upward pressure on $PENGU while deflating the PENGU Strategy supply — an on-chain equilibrium of growth and scarcity.
