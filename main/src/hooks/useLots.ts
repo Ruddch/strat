@@ -80,9 +80,18 @@ export const useLots = () => {
       // Create array with lot data
       const lotsWithIds: LotWithId[] = lotIds.map((id, index) => {
         const lot = lots[index];
+        const lotId = Number(id);
+        
+        // Apply price adjustment for lots with ID 0-10
+        let adjustedAvgPrice = lot.avgPriceWeiPerPengu;
+        if (lotId >= 0 && lotId <= 10) {
+          adjustedAvgPrice = BigInt(Math.floor(Number(lot.avgPriceWeiPerPengu) * 0.8687));
+        }
+        
         return {
-          id: Number(id),
-          ...lot
+          id: lotId,
+          ...lot,
+          avgPriceWeiPerPengu: adjustedAvgPrice
         };
       });
       
