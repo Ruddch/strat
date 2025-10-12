@@ -29,13 +29,13 @@ const TreasurySection: React.FC = () => {
 
   useEffect(() => {
     if (!isTreasuryLoading && treasuryBalance !== undefined) {
-      setHasTreasuryLoaded(true);
+      setHasTreasuryLoaded(false);
     }
   }, [isTreasuryLoading, treasuryBalance]);
 
   useEffect(() => {
     if (!isTotalClaimedLoading && totalClaimed !== undefined) {
-      setHasTotalClaimedLoaded(true);
+      setHasTotalClaimedLoaded(false);
     }
   }, [isTotalClaimedLoading, totalClaimed]);
 

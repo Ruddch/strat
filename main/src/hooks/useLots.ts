@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useReadContract } from 'wagmi';
 import { contractConfig } from '@/lib/contracts';
 
@@ -71,53 +71,53 @@ export const useLots = () => {
   }, [isLotsLoading, allLots]);
 
   // Process lots data
-  const processLots = useMemo((): LotWithId[] => {
-    if (!allLots || isLotsLoading) return [];
+  // const processLots = useMemo((): LotWithId[] => {
+  //   if (!allLots || isLotsLoading) return [];
     
-    try {
-      const [lotIds, lots] = allLots as [bigint[], Lot[]];
+  //   try {
+  //     const [lotIds, lots] = allLots as [bigint[], Lot[]];
       
-      // Create array with lot data
-      const lotsWithIds: LotWithId[] = lotIds.map((id, index) => {
-        const lot = lots[index];
-        return {
-          id: Number(id),
-          ...lot
-        };
-      });
+  //     // Create array with lot data
+  //     const lotsWithIds: LotWithId[] = lotIds.map((id, index) => {
+  //       const lot = lots[index];
+  //       return {
+  //         id: Number(id),
+  //         ...lot
+  //       };
+  //     });
       
-      return lotsWithIds;
-    } catch (error) {
-      console.error('Error processing lots:', error);
-      return [];
-    }
-  }, [allLots, isLotsLoading]);
+  //     return lotsWithIds;
+  //   } catch (error) {
+  //     console.error('Error processing lots:', error);
+  //     return [];
+  //   }
+  // }, [allLots, isLotsLoading]);
 
-  // Get 4 lots closest to sale (lowest avgPriceWeiPerPengu)
-  const closestLots = useMemo((): LotWithId[] => {
-    return processLots
-      .sort((a, b) => {
-        if (a.avgPriceWeiPerPengu < b.avgPriceWeiPerPengu) return -1;
-        if (a.avgPriceWeiPerPengu > b.avgPriceWeiPerPengu) return 1;
-        return 0;
-      })
-      .slice(0, 4);
-  }, [processLots]);
+  // // Get 4 lots closest to sale (lowest avgPriceWeiPerPengu)
+  // const closestLots = useMemo((): LotWithId[] => {
+  //   return processLots
+  //     .sort((a, b) => {
+  //       if (a.avgPriceWeiPerPengu < b.avgPriceWeiPerPengu) return -1;
+  //       if (a.avgPriceWeiPerPengu > b.avgPriceWeiPerPengu) return 1;
+  //       return 0;
+  //     })
+  //     .slice(0, 4);
+  // }, [processLots]);
 
-  // Get 4 latest lots (sorted by timestamp descending)
-  const lastBuys = useMemo((): LotWithId[] => {
-    return processLots
-      .sort((a, b) => {
-        if (a.timestamp > b.timestamp) return -1;
-        if (a.timestamp < b.timestamp) return 1;
-        return 0;
-      })
-      .slice(0, 4);
-  }, [processLots]);
+  // // Get 4 latest lots (sorted by timestamp descending)
+  // const lastBuys = useMemo((): LotWithId[] => {
+  //   return processLots
+  //     .sort((a, b) => {
+  //       if (a.timestamp > b.timestamp) return -1;
+  //       if (a.timestamp < b.timestamp) return 1;
+  //       return 0;
+  //     })
+  //     .slice(0, 4);
+  // }, [processLots]);
 
   return {
-    closestLots,
-    lastBuys,
+    closestLots: [],
+    lastBuys: [],
     hasInitiallyLoaded,
     ethPrice,
     isEthPriceLoading,
