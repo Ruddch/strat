@@ -6,11 +6,11 @@ import { STRATEGY_CORE_ABI } from './strategy-core-abi';
 import { STRAT_TOKEN_ABI } from './strat-token-abi';
 import { CONTRACT_ADDRESSES } from './config';
 
-export function formatTokenBalance(balance: bigint, decimals: number = 18): string {
+export function formatTokenBalance(balance: bigint, decimals: number = 18, precision: number = 2): string {
   const formatted = formatUnits(balance, decimals);
 
   if (parseFloat(formatted) >= 0.01) {
-    return parseFloat(formatted).toFixed(2);
+    return parseFloat(formatted).toFixed(precision);
   }
   
   const decimalIndex = formatted.indexOf('.');

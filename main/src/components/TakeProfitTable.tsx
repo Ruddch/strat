@@ -64,7 +64,7 @@ const TakeProfitTable: React.FC = () => {
             <div key={lot.id} className={`flex w-full ${index % 2 === 1 ? 'bg-[rgba(96,255,255,0.05)]' : ''}`}>
               <div className="flex-1 text-left p-2 pb-8 pt-8 border-b border-[var(--color-border-accent)]">
                 <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-white font-[family-name:var(--font-random-grotesque)]">
-                  {formatTokenBalance(lot.amountPengu)}
+                  {formatTokenBalance(lot.amountPengu, 18, 0)}
                 </span>
               </div>
               <div className="flex-1 border-l p-2 pb-8 pt-8 border-b border-[var(--color-border-accent)]">

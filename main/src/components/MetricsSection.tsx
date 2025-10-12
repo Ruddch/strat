@@ -59,7 +59,7 @@ const MetricsSection: React.FC = () => {
         <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
           <AnimatedValue
             isLoading={!hasPenguBoughtLoaded}
-            value={totalPenguBought ? formatTokenBalance(totalPenguBought) : '0'}
+            value={totalPenguBought ? formatTokenBalance(totalPenguBought, 18, 0) : '0'}
           />
         </p>
       </div>
