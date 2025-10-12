@@ -95,26 +95,24 @@ export const useLots = () => {
 
   // Get 4 lots closest to sale (lowest avgPriceWeiPerPengu)
   const closestLots = useMemo((): LotWithId[] => {
-    return [];
-    // return processLots
-    //   .sort((a, b) => {
-    //     if (a.avgPriceWeiPerPengu < b.avgPriceWeiPerPengu) return -1;
-    //     if (a.avgPriceWeiPerPengu > b.avgPriceWeiPerPengu) return 1;
-    //     return 0;
-    //   })
-    //   .slice(0, 4);
+    return processLots
+      .sort((a, b) => {
+        if (a.avgPriceWeiPerPengu < b.avgPriceWeiPerPengu) return -1;
+        if (a.avgPriceWeiPerPengu > b.avgPriceWeiPerPengu) return 1;
+        return 0;
+      })
+      .slice(0, 4);
   }, [processLots]);
 
   // Get 4 latest lots (sorted by timestamp descending)
   const lastBuys = useMemo((): LotWithId[] => {
-    return [];
-    // return processLots
-    //   .sort((a, b) => {
-    //     if (a.timestamp > b.timestamp) return -1;
-    //     if (a.timestamp < b.timestamp) return 1;
-    //     return 0;
-    //   })
-    //   .slice(0, 4);
+    return processLots
+      .sort((a, b) => {
+        if (a.timestamp > b.timestamp) return -1;
+        if (a.timestamp < b.timestamp) return 1;
+        return 0;
+      })
+      .slice(0, 4);
   }, [processLots]);
 
   return {
