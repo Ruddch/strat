@@ -53,7 +53,7 @@ const TakeProfitTable: React.FC = () => {
       ) : (
         closestLots.map((lot, index) => {
           // Calculate multiplier (current price / avg price)
-          const multiplier = 1.2; 
+          const multiplier = 1.1; 
           
           // Calculate predicted gain (simplified)
           // Convert bigint to number for calculation, then back to string for display

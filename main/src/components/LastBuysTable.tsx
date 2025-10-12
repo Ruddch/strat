@@ -53,7 +53,7 @@ const LastBuysTable: React.FC = () => {
       ) : (
         lastBuys.map((lot, index) => {
           // Calculate multiplier (current price / avg price)
-          const multiplier = 1.2; 
+          const multiplier = 1.1; 
           
           // Convert bigint to number for calculation, then back to string for display
           const ethSpentNumber = Number(lot.ethSpent) / 1e18; // Convert from wei to ETH
@@ -73,7 +73,7 @@ const LastBuysTable: React.FC = () => {
               </div>
               <div className="flex-1 border-l p-2 pb-8 pt-8 border-b border-[var(--color-border-accent)]">
                 <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-white font-[family-name:var(--font-random-grotesque)]">
-                  {multiplier.toFixed(2)}x
+                  {multiplier.toFixed(1)}x
                 </span>
               </div>
               <div className="flex-1 p-2 pb-8 pt-8 border-l border-b border-[var(--color-border-accent)]">
