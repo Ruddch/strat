@@ -5,7 +5,7 @@ import { WalletBalance } from "@/components/wallet/WalletBalance";
 import { BuyInput } from "@/components/wallet/BuyInput";
 import { StratTokenBalance } from "@/components/wallet/StratTokenBalance";
 import { SellInput } from "@/components/wallet/SellInput";
-// import { CONTRACT_ADDRESSES } from "@/lib/contracts/config";
+import { CONTRACT_ADDRESSES } from "@/lib/contracts/config";
 
 export default function TradingSection() {
   const [copied, setCopied] = useState(false);
@@ -28,7 +28,7 @@ export default function TradingSection() {
 
   const copyContractAddress = async () => {
     try {
-      //await navigator.clipboard.writeText(CONTRACT_ADDRESSES.STRAT_TOKEN);
+      await navigator.clipboard.writeText(CONTRACT_ADDRESSES.STRAT_TOKEN);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -72,7 +72,7 @@ export default function TradingSection() {
           </h4>
           <div onClick={copyContractAddress} className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity">
             <code className="text-[16px] font-mono text-[var(--color-text-accent)] bg-black/20 px-2 py-1 rounded border border-[var(--color-border-accent)]">
-              0x************************
+              {CONTRACT_ADDRESSES.STRAT_TOKEN}
             </code>
             {copied && (
               <span className="text-xs text-green-400 font-[family-name:var(--font-martian-mono)]">

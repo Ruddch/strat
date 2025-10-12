@@ -27,15 +27,10 @@ export function SellInput({ onSell }: SellInputProps) {
   });
 
   const handleSell = async () => {
-    const tradingEnabled = localStorage.getItem('TRAIDING_ENABLED') === 'true';
 
     if (amount && parseFloat(amount) > 0) {
       try {
-        if (tradingEnabled) {
-          await sellTokens(amount);
-        } else {
-          console.log("Trading is not enabled");
-        }
+        await sellTokens(amount);
         onSell(amount);
         setAmount("");
       } catch (err) {

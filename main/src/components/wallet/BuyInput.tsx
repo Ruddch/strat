@@ -14,14 +14,9 @@ export function BuyInput({ onBuy }: BuyInputProps) {
   const { isConnected } = useAccount();
 
   const handleBuy = async () => {
-    const tradingEnabled = localStorage.getItem('TRAIDING_ENABLED') === 'true';
     if (amount && parseFloat(amount) > 0) {
       try {
-        if (tradingEnabled) {
-          await buyTokens(amount);
-        } else {
-          console.log("Trading is not enabled");
-        }
+        await buyTokens(amount);
         onBuy(amount);
         setAmount("");
       } catch (err) {
