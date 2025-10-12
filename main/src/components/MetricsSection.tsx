@@ -30,13 +30,13 @@ const MetricsSection: React.FC = () => {
 
   useEffect(() => {
     if (!isETHFeesLoading && totalETHFees !== undefined) {
-      setHasETHFeesLoaded(true);
+      setHasETHFeesLoaded(false);
     }
   }, [isETHFeesLoading, totalETHFees]);
 
   useEffect(() => {
     if (!isPenguBoughtLoading && totalPenguBought !== undefined) {
-      setHasPenguBoughtLoaded(true);
+      setHasPenguBoughtLoaded(false);
     }
   }, [isPenguBoughtLoading, totalPenguBought]);
   return (
