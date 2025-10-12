@@ -112,7 +112,7 @@ export const useLots = () => {
         if (a.timestamp < b.timestamp) return 1;
         return 0;
       })
-      .slice(0, 4);
+      //.slice(0, 4);
   }, [processLots]);
 
   return {
