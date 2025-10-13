@@ -9,6 +9,7 @@ import TakeProfitTable from "@/components/TakeProfitTable";
 import LastBuysTable from "@/components/LastBuysTable";
 import TreasurySection from "@/components/TreasurySection";
 import TradingSection from "@/components/TradingSection";
+import HowItWorksSection from "@/components/HowItWorksSection";
 import { useReadContract } from "wagmi";
 import { contractConfig } from "@/lib/contracts"; 
 
@@ -27,6 +28,7 @@ export default function Home() {
   //const { address } = useAccount();
   const containerRef = useRef<HTMLDivElement>(null);
   const tradingRef = useRef<HTMLDivElement>(null);
+  const howItWorksRef = useRef<HTMLDivElement>(null);
   const takeProfitRef = useRef<HTMLDivElement>(null);
   const lastBuysRef = useRef<HTMLDivElement>(null);
   const treasuryRef = useRef<HTMLDivElement>(null);
@@ -79,7 +81,7 @@ export default function Home() {
       }
     );
 
-    const sections = ['live', 'trading', 'take-profit', 'last-buys', 'treasury'];
+    const sections = ['live', 'trading', 'how-it-works', 'take-profit', 'last-buys', 'treasury'];
     sections.forEach(sectionId => {
       const element = document.getElementById(sectionId);
       if (element) {
@@ -139,12 +141,19 @@ export default function Home() {
         </main>
       </div>
 
+      {/* Fourth Section - How it works */}
+      <div id="how-it-works" ref={howItWorksRef} className="relative min-h-screen z-10 text-white snap-start">
+        <HowItWorksSection />
+      </div>
+
       {/* Second Section - Trading */}
       <div id="trading" ref={tradingRef} className="relative min-h-screen z-10 text-white snap-start">
         <TradingSection />
       </div>
 
-      {/* Third Section - Take Profit */}
+     
+
+      {/* Fourth Section - Take Profit */}
       <div id="take-profit" ref={takeProfitRef} className="relative min-h-screen z-10 text-white snap-start">
         <TakeProfitTable />
       </div>
@@ -152,7 +161,7 @@ export default function Home() {
         <LastBuysTable />
       </div>
 
-      {/* Fourth Section - Treasury */}
+      {/* Fifth Section - Treasury */}
       <div id="treasury" ref={treasuryRef} className="relative min-h-screen z-10 text-white snap-start">
         <TreasurySection />
       </div>

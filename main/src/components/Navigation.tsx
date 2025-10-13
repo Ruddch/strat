@@ -45,6 +45,16 @@ export function Navigation() {
                 Live
               </button>
               <button 
+                onClick={() => scrollToSection('how-it-works')}
+                className={`block text-[14px] font-light leading-[150%] tracking-[0%] font-[family-name:var(--font-martian-mono)] hover:opacity-80 transition-opacity cursor-pointer ${
+                  activeSection === 'how-it-works' 
+                    ? 'text-[var(--color-text-accent)]' 
+                    : 'text-white'
+                }`}
+              >
+                How it works
+              </button>
+              <button 
                 onClick={() => scrollToSection('trading')}
                 className={`block text-[14px] font-light leading-[150%] tracking-[0%] font-[family-name:var(--font-martian-mono)] hover:opacity-80 transition-opacity cursor-pointer ${
                   activeSection === 'trading' 
@@ -54,6 +64,7 @@ export function Navigation() {
               >
                 Trading
               </button>
+              
               <button 
                 onClick={() => scrollToSection('take-profit')}
                 className={`block text-[14px] font-light leading-[150%] tracking-[0%] font-[family-name:var(--font-martian-mono)] hover:opacity-80 transition-opacity cursor-pointer ${
