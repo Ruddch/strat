@@ -62,7 +62,7 @@ export function Navigation() {
                     : 'text-white'
                 }`}
               >
-                Take Profit
+                Upcoming Sales
               </button>
               <button 
                 onClick={() => scrollToSection('last-buys')}

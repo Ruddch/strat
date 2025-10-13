@@ -102,15 +102,13 @@ export const useLots = () => {
     }
   }, [allLots, isLotsLoading]);
 
-  // Get 4 lots closest to sale (lowest avgPriceWeiPerPengu)
+  // Get lots closest to sale (lowest avgPriceWeiPerPengu)
   const closestLots = useMemo((): LotWithId[] => {
     return processLots
       .sort((a, b) => {
-        if (a.avgPriceWeiPerPengu < b.avgPriceWeiPerPengu) return -1;
-        if (a.avgPriceWeiPerPengu > b.avgPriceWeiPerPengu) return 1;
-        return 0;
-      })
-      .slice(0, 4);
+        // Sort by avgPriceWeiPerPengu ascending (lowest price first)
+        return Number(a.avgPriceWeiPerPengu - b.avgPriceWeiPerPengu);
+      }).slice(0);
   }, [processLots]);
 
   // Get 4 latest lots (sorted by timestamp descending)

@@ -1,11 +1,14 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { formatTokenBalance, formatTokenPrice } from '@/lib/contracts';
 import { useLots } from '@/hooks/useLots';
 
 const LastBuysTable: React.FC = () => {
   const { lastBuys, hasInitiallyLoaded, ethPrice, isEthPriceLoading } = useLots();
+  const [showAll, setShowAll] = useState(false);
+  
+  const visibleLots = showAll ? lastBuys : lastBuys.slice(0, 4);
 
   return (
     <div>
@@ -51,7 +54,7 @@ const LastBuysTable: React.FC = () => {
           </div>
         </div>
       ) : (
-        lastBuys.map((lot, index) => {
+        visibleLots.map((lot, index) => {
           // Calculate multiplier (current price / avg price)
           const multiplier = 1.1; 
           
@@ -84,6 +87,18 @@ const LastBuysTable: React.FC = () => {
             </div>
           );
         })
+      )}
+      
+      {/* Show More Button */}
+      {hasInitiallyLoaded && lastBuys.length > 4 && (
+        <div className="flex w-full justify-center p-4">
+          <button
+            onClick={() => setShowAll(!showAll)}
+            className="px-6 py-2 bg-transparent border border-[var(--color-border-accent)] text-white hover:bg-[rgba(96,255,255,0.1)] transition-colors duration-200 font-[family-name:var(--font-martian-mono)] text-[14px] cursor-pointer"
+          >
+            {showAll ? 'Show Less' : `Show More (${lastBuys.length - 4} more)`}
+          </button>
+        </div>
       )}
     </div>
   );
