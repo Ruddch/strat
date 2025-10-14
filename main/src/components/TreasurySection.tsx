@@ -140,7 +140,7 @@ const TreasurySection: React.FC = () => {
             <span className="text-[14px] font-light leading-[150%] tracking-[0%] text-white font-[family-name:var(--font-martian-mono)]">
               This epoch 
             </span>
-            <span className="text-[48px] lg:text-[72px] font-normal leading-[100%] tracking-[0%] text-green-500 font-[family-name:var(--font-random-grotesque)]">
+            <span className="text-[48px] lg:text-[72px] font-normal leading-[100%] tracking-[0%] text-[#00FF00] font-[family-name:var(--font-random-grotesque)]">
               <AnimatedValue
                 isLoading={!hasTreasuryLoaded || !hasPenguPriceLoaded}
                 value={`$${treasuryUSDValue}`}
