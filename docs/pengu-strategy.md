@@ -1,91 +1,51 @@
 ---
 id: pengu-strategy
-title: PENGU Strategy
+title: Overview
 sidebar_label: Overview
 ---
 
 # Overview
 
----
+PENGU Strategy is a decentralized token protocol on the Abstract blockchain that creates a perpetual on-chain economy through automated buybacks, deflation, and rewards — all centered around $PST and $PENGU.
 
-## Overview
+## Core Mechanisms
 
-**PENGU Strategy** is a decentralized token project built on the **Abstract** blockchain.  
-It merges automated trading logic, deflationary supply mechanisms, and weekly reward cycles into a single on-chain system centered around **$PENGU**.
+- **Automated Buyback Cycle:** All trading of $PST incites a constant buyback and burn loop, building value for holders with every transaction.
+- **Deflationary Supply:** Each buyback leads to PST being burned, permanently reducing supply.
 
-Inspired by PunkStrategy, PENGU Strategy replaces NFT flipping with **$PENGU buyback and resale**, creating a fully autonomous flywheel economy where trading activity powers token growth, rewards, and burns.
+## Transaction Fee Structure
 
----
+A 10% fee is charged on every $PST transaction:
+- **8%** goes to the protocol treasury (used for PENGU buybacks, resale, and weekly rewards)
+- **1.5%** is allocated for operations and development
+- **0.5%** supports the $INVEST ecosystem
 
-## Core Mechanics
+## Treasury Operations
 
-### Transaction Fee Structure
-
-Each **PENGU Strategy** token trade incurs a **10% transaction fee**, distributed between the team and the protocol treasury:
-
-| Allocation | Percentage | Description |
-|-------------|-------------|--------------|
-| **Team & Development** | **1.5%** | Used for protocol maintenance, development, and ecosystem operations. |
-| **$INVEST Buybacks** | **0.5%** | Dedicated to supporting the $INVEST community through token buybacks, strengthening the broader ecosystem. |
-| **Treasury** | **8%** | Core vault used for $PENGU buybacks, resales, and holder rewards. |
-
----
-
-### Treasury Operations
-
-Funds accumulated in the **Treasury (8%)** are automatically managed through smart contracts:
-
-| Allocation | Percentage | Purpose |
-|-------------|-------------|----------|
-| **5.6%** | Dedicated to **$PENGU buybacks** on the Abstract DEX. |
-| **2.4%** | Reserved for **weekly holder rewards**. |
-
----
+All treasury funds are managed automatically by smart contracts:
+- 70% of the treasury is used for buying PENGU and reselling with markup
+- 30% is reserved for weekly rewards distribution to PST holders
 
 ## Anti-Whale Protection
 
-To ensure fair distribution and prevent market manipulation, **PENGU Strategy** implements comprehensive anti-whale mechanisms:
+To ensure fair play and decentralization:
+- Maximum transaction: **1% of supply**
+- Maximum wallet: **2% of supply**
+Team and protocol contracts may be exempt for technical purposes.
 
-| Limit Type | Percentage | Purpose |
-|-------------|-------------|----------|
-| **Max Transaction** | **1%** | Maximum tokens that can be transferred in a single transaction. |
-| **Max Wallet** | **2%** | Maximum tokens any single wallet can hold. |
+## PENGU Buyback & Sale Cycle
 
-These limits apply to all market transactions and can be adjusted by the protocol owner if needed. Certain addresses (team wallets, contracts) are exempt from these limits to ensure smooth protocol operations.
-
----
-
-## $PENGU Buyback & Sale Cycle
-
-1. **Accumulation** — Treasury collects fees from trades.  
-2. **Buyback** — Once the buy threshold is reached, the protocol executes a **$PENGU buyback** at market price.  
-3. **Resale with Markup** — Purchased $PENGU is automatically listed with a **×1.1 markup (10% premium)**.  
-4. **Buyback & Burn** — After resale, proceeds are used to **buy back and burn PENGU Strategy tokens**, reducing total supply.
-
-> 🔥 Each cycle creates upward pressure on $PENGU while deflating the PENGU Strategy supply — an on-chain equilibrium of growth and scarcity.
-
----
+1. Fees accumulate in the treasury
+2. When threshold is reached, buys PENGU on the market
+3. Purchased PENGU is listed for sale at a **1.1x markup** in the PENGU/ETH pair. Sale only triggers if CEX price matches/exceeds DEX price to prevent manipulation.
+4. Proceeds from resales are used to buy back and burn PST tokens, reducing supply and driving value.
 
 ## Holder Rewards
 
-Every **epoch (7 days)**, rewards are distributed from the **2.4% Treasury pool** in **$PENGU**, according to:
-
-- **Holding duration:** the longer you hold, the higher your multiplier.  
-- **Holding amount:** larger holders receive proportionally greater rewards.
-
-Rewards are **claimable directly from the smart contract** at the end of each epoch.
-
----
+- Every week (epoch = 7 days), 30% of PENGU bought is distributed to PST holders as dividends
+- Daily snapshots are taken; holding longer means a higher reward multiplier (catching all 7 snapshots = 7x multiplier versus just final snapshot)
+- Dividends can be claimed via the website
 
 ## Transparency & Automation
 
-- All mechanics — buybacks, sales, burns, and rewards — are **fully on-chain and verifiable**.  
-- Contracts are **audited and public** on [Abscan](https://abscan.org).  
-
----
-
-## Summary
-
-**PENGU Strategy** represents an evolved form of tokenomics — one where trading volume directly drives liquidity, deflation, and community participation.
-
-> **Every transaction strengthens $PENGU, rewards holders, and reduces supply — a true on-chain strategy loop.**
+All actions — fees, buybacks, resales, burns, and rewards — are on-chain and verifiable. Smart contracts handle all operations transparently, with no manual intervention, and all contract addresses are public.
