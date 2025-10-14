@@ -1,7 +1,8 @@
 ---
-id: readme
+id: pengu-strategy-main
 title: PENGU Strategy
-sidebar_label: Introduction
+sidebar_label: PENGU Strategy
+description: The Perpetual PENGU Machine on the Abstract blockchain
 ---
 
 # PENGU Strategy
