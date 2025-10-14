@@ -105,7 +105,7 @@ const TakeProfitTable: React.FC = () => {
         <div className="flex w-full">
           <div className="flex-1 text-left border-r border-[var(--color-border-accent)] p-2">
             <span className="text-[14px] font-light leading-[150%] tracking-[0%] text-white font-[family-name:var(--font-martian-mono)]">
-              Total Pengu Amount
+              Total PENGU Amount
             </span>
           </div>
           <div className="flex-1 p-2">

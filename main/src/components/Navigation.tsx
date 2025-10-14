@@ -93,7 +93,7 @@ export function Navigation() {
                     : 'text-white'
                 }`}
               >
-                Treasury
+                Holders Dividends
               </button>
             </div>
           )}
