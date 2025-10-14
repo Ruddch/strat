@@ -3,7 +3,6 @@
 import { useAccount } from "wagmi";
 import { ConnectKitButton } from "connectkit";
 import dynamic from "next/dynamic";
-import { OrientationLock } from "@/components/ui/OrientationLock";
 import AnimatedValue from "@/components/ui/AnimatedValue";
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useBlockNumber } from "wagmi";
 import { contractConfig, formatTokenBalance } from "@/lib/contracts";
@@ -215,7 +214,7 @@ export default function ClaimPage() {
   };
 
   return (
-    <OrientationLock>
+    <div>
       <div className="ml-0 mr-0 lg:ml-64 lg:mr-64 font-[family-name:var(--font-avenue-mono)] h-screen no-scrollbar overflow-y-scroll snap-y snap-mandatory">
       <div id="claim" className="relative grid grid-rows-[1fr_auto] min-h-screen snap-start">
         <ResponsiveBackgroundEffects message="CLAIM" mobileFontSize={80} desktopFontSize={200} />
@@ -371,6 +370,6 @@ export default function ClaimPage() {
         </main>
       </div>
     </div>
-    </OrientationLock>
+    </div>
   );
 }
