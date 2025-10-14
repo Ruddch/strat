@@ -1,37 +1,40 @@
-# Pengu Strategy
+# PENGU Strategy
 
 ![](./teaser.gif)
 
-Welcome to the **PENGU Strategy** — The Perpetual Pengu Machine on the **Abstract** blockchain.
+Welcome to PENGU Strategy — The Perpetual PENGU Machine on the Abstract blockchain.
 
-This documentation provides an overview of the protocol’s design, tokenomics, and reward mechanics.
-
----
+This documentation provides an overview of the protocol's design, tokenomics, and reward mechanics built around automated $PENGU buyback cycles and holder rewards.
 
 ## Sections
 
 - [Overview](./pengu-strategy.md)  
-  Introduction to PENGU Strategy — how it works, its core mechanisms, and the logic behind the automated $PENGU buyback cycle.
-
+  Core protocol concept and $PENGU buyback logic.
 - [Tokenomics](./tokenomics.md)  
-  Detailed breakdown of the 10% transaction fee structure, treasury allocations, buyback/burn system, and holder reward distribution.
-
----
+  1B PST supply, fair launch, fee mechanics, no extra minting.
+- [Fees & Distribution](./fees-and-distribution.md)  
+  10% trade fee breakdown: buybacks, treasury, rewards split.
+- [PENGU Operations](./pengu-operations.md)  
+  How PENGU is bought, sold (x1.1 markup), and CEX price protection.
+- [Dividends](./dividends.md)  
+  Weekly reward distribution, epochs, holder multipliers.
 
 ## Summary
 
-Pengu Strategy establishes a **self-sustaining on-chain economy**, where:
-- Trading generates liquidity
-- Liquidity funds $PENGU buybacks
-- Profits fuel token burns
-- And holders receive ongoing rewards
+PENGU Strategy establishes a self-sustaining on-chain economy where:
 
-> Every transaction strengthens $PENGU and rewards those who stay in the ecosystem.
+- **Trading generates fees** — Every PST transaction contributes 10% to the system
+- **Treasury splits funds** — 8% treasury allocation: 70% for PENGU trading operations, 30% for weekly dividends
+- **PENGU traded with markup** — Purchased PENGU formed into lots, sold at x1.1 markup when PENGU|ETH price allows
+- **CEX price protection** — All trades verified against centralized exchange prices to prevent manipulation
+- **Profits burn PST** — 100% of PENGU sale proceeds automatically buy back and burn PST tokens
+- **Weekly dividend epochs** — Holders receive PENGU dividends based on daily snapshots and holding duration
 
----
+The longer you hold during each 7-day epoch, the greater your reward multiplier — holding for the full week with all 7 snapshots provides 7x the rewards compared to only the final snapshot.
+
+Every transaction strengthens the PENGU ecosystem, reduces PST supply through burns, and rewards long-term holders through the automated dividend system.
 
 ## 🔗 Useful Links
 
-- [Site](https://ruddch.github.io/strat/)
-- [Dex](https://abstractlabs.xyz)
-- [Twitter / X](https://x.com/PudgyInvest)
+- [**🌐 Website**](https://pengustrategy.com)
+- [**🐦 Twitter**](https://twitter.com/pengustrategy)
