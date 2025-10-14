@@ -1,3 +1,7 @@
+id: readme
+title: PENGU Strategy
+sidebar_label: Introduction
+
 # PENGU Strategy
 
 ![](./teaser.gif)
