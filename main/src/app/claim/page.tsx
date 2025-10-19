@@ -4,10 +4,11 @@ import { useAccount } from "wagmi";
 import { ConnectKitButton } from "connectkit";
 import dynamic from "next/dynamic";
 import AnimatedValue from "@/components/ui/AnimatedValue";
+import SuccessPopup from "@/components/ui/SuccessPopup";
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useBlockNumber } from "wagmi";
-import { contractConfig, formatTokenBalance } from "@/lib/contracts";
+import { contractConfig, formatTokenBalance, CONTRACT_ADDRESSES } from "@/lib/contracts";
 import { getRecentClaims } from "@/lib/contracts/events";
-import React from "react";
+import React, { useMemo } from "react";
 
 const ResponsiveBackgroundEffects = dynamic(() => import("@/components/ui/ResponsiveBackgroundEffects").then(mod => ({ default: mod.ResponsiveBackgroundEffects })), { 
   ssr: false 
@@ -19,7 +20,7 @@ const truncateAddress = (address: string, startChars: number = 6, endChars: numb
   return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
 };
 
-// Interface for claim data
+// Interface for claim data from events
 interface ClaimData {
   id: number;
   walletAddress: string;
@@ -28,44 +29,63 @@ interface ClaimData {
   epochId: number;
 }
 
-// Function to generate fake Merkle proof
-const generateFakeMerkleProof = (userAddress: string, weightedBalance: bigint, claimAmount: bigint): `0x${string}`[] => {
-  // Generate fake proof hashes (in real implementation, these would come from Merkle tree)
-  const fakeProof: `0x${string}`[] = [
-    "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-    "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
-    "0x9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba",
-    "0xfedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
-  ];
-  
-  console.log(`Generated fake Merkle proof for user ${userAddress}, weightedBalance: ${weightedBalance}, claimAmount: ${claimAmount}`);
-  return fakeProof;
-};
+// Interface for Merkle tree claim data
+interface MerkleClaimData {
+  address: string;
+  weighted_balance: string;
+  claim_amount_wei: string;
+  claim_amount_tokens: string;
+  proof: string[];
+}
 
-// Function to fetch Merkle proof from fake backend
-const fetchMerkleProof = async (userAddress: string, epochId: bigint, weightedBalance: bigint, claimAmount: bigint): Promise<`0x${string}`[]> => {
+// Interface for Merkle tree data
+interface MerkleTreeData {
+  merkle_root: string;
+  total_recipients: number;
+  total_claim_amount_wei: string;
+  total_claim_amount_tokens: string;
+  distribution_amount: string;
+  claims: MerkleClaimData[];
+}
+
+// Function to fetch Merkle proof from local JSON file
+const fetchMerkleProof = async (userAddress: string, epochId: bigint): Promise<{proof: `0x${string}`[], weightedBalance: bigint, claimAmount: bigint} | null> => {
   try {
-    // Call the API endpoint
-    const response = await fetch(`/api/merkle-proof?user=${userAddress}&epoch=${epochId}&weightedBalance=${weightedBalance}&claimAmount=${claimAmount}`);
+    // Get fee collector address from contract config
+    const treasuryAddress = CONTRACT_ADDRESSES.TREASURY.toLowerCase();
+    
+    // Form filename: {fee_collector_ca}_{epochId}.json
+    const filename = `${treasuryAddress}_${epochId.toString()}.json`;
+    
+    // Load Merkle tree data from static file
+    const response = await fetch(`/static/${filename}`);
+
     
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      console.error(`Failed to load merkle tree data: ${response.status}`);
+      return null;
     }
     
-    const data = await response.json();
+    const merkleData: MerkleTreeData = await response.json();
     
-    if (!data.success) {
-      throw new Error(data.error || 'Failed to generate Merkle proof');
+    // Find user in the merkle tree
+    const userClaim = merkleData.claims.find((claim: MerkleClaimData) => 
+      claim.address.toLowerCase() === userAddress.toLowerCase()
+    );
+    
+    if (!userClaim) {
+      return null;
     }
     
-    console.log('API response:', data);
-    return data.proof;
+    return {
+      proof: userClaim.proof as `0x${string}`[],
+      weightedBalance: BigInt(userClaim.weighted_balance),
+      claimAmount: BigInt(userClaim.claim_amount_wei)
+    };
     
   } catch (error) {
-    console.error('Error fetching Merkle proof from API:', error);
-    // Fallback to local fake proof generation
-    console.log('Falling back to local fake proof generation');
-    return generateFakeMerkleProof(userAddress, weightedBalance, claimAmount);
+    console.error('Error fetching Merkle proof:', error);
+    return null;
   }
 };
 
@@ -97,7 +117,7 @@ export default function ClaimPage() {
   });
 
   // Get user's claimable info
-  const { data: claimableInfo } = useReadContract({
+  const { data: claimableInfo, isLoading: isClaimableInfoLoading } = useReadContract({
     ...contractConfig.treasury,
     functionName: 'getUserClaimableInfo',
     args: address ? [address] : undefined,
@@ -116,9 +136,16 @@ export default function ClaimPage() {
   // Track initial loading state
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = React.useState(false);
   const [hasCurrentEpochLoaded, setHasCurrentEpochLoaded] = React.useState(false);
-  const [isFetchingProof, setIsFetchingProof] = React.useState(false);
   const [recentClaims, setRecentClaims] = React.useState<ClaimData[]>([]);
   const [isLoadingClaims, setIsLoadingClaims] = React.useState(false);
+  
+  // Merkle data state
+  const [merkleData, setMerkleData] = React.useState<{proof: `0x${string}`[], weightedBalance: bigint, claimAmount: bigint} | null>(null);
+  const [isLoadingMerkleData, setIsLoadingMerkleData] = React.useState(false);
+  
+  // Success popup state
+  const [showSuccessPopup, setShowSuccessPopup] = React.useState(false);
+  const [successClaimAmount, setSuccessClaimAmount] = React.useState('0');
 
   React.useEffect(() => {
     if (!isClaimedLoading && userClaimedDividends !== undefined) {
@@ -132,6 +159,48 @@ export default function ClaimPage() {
     }
   }, [isCurrentEpochLoading, userCurrentEpochDividends]);
 
+  // Show success popup when claim is successful
+
+  React.useEffect(() => {
+    if (merkleData?.claimAmount && isSuccess) {
+      setSuccessClaimAmount(formatTokenBalance(merkleData.claimAmount));
+      setShowSuccessPopup(true);
+    }
+  }, [merkleData?.claimAmount, isSuccess]);
+  
+  // Load Merkle data when user connects wallet and claimable info is available
+  React.useEffect(() => {
+    const loadMerkleData = async () => {
+      
+      // Wait for claimable info to load
+      if (!address || isClaimableInfoLoading) {
+        return;
+      }
+      
+      // If claimable info is undefined or null, user might not be eligible
+      if (claimableInfo === undefined || claimableInfo === null) {
+        setMerkleData(null);
+        return;
+      }
+      
+      const [, , epochId] = claimableInfo as [boolean, bigint, bigint];
+      
+
+      setIsLoadingMerkleData(true);
+      try {
+        const data = await fetchMerkleProof(address, epochId);
+        setMerkleData(data);
+      } catch (error) {
+        console.error('Error loading Merkle data:', error);
+        setMerkleData(null);
+      } finally {
+        setIsLoadingMerkleData(false);
+      }
+    };
+
+    loadMerkleData();
+  }, [address, claimableInfo, isClaimableInfoLoading]);
+
   // Function to fetch recent claims from contract events
   const fetchRecentClaims = async () => {
     if (!blockNumber) return;
@@ -139,7 +208,7 @@ export default function ClaimPage() {
     setIsLoadingClaims(true);
     try {
       // Fetch real events from contract
-      const claimEvents = await getRecentClaims(1000); // Last 1000 blocks
+      const claimEvents = await getRecentClaims(500000); // Last 50000 blocks
       
       // Convert events to display format
       const claims: ClaimData[] = claimEvents.slice(0, 10).map((event, index) => ({
@@ -151,7 +220,6 @@ export default function ClaimPage() {
       }));
       
       setRecentClaims(claims);
-      console.log('Fetched real claim events:', claims);
       
     } catch (error) {
       console.error('Error fetching recent claims:', error);
@@ -171,48 +239,43 @@ export default function ClaimPage() {
 
   // Handle claim function
   const handleClaim = async () => {
-    console.log(claimableInfo, address);
     if (!claimableInfo || !address) return;
     
-    const [canClaim, claimableAmount, epochId] = claimableInfo as [boolean, bigint, bigint];
-    
-    if (!canClaim || claimableAmount === BigInt(0)) {
-      alert('No dividends available to claim');
+    // Check if CAN_CLAIM flag is set in localStorage
+    const canClaimFlag = localStorage.getItem('CAN_CLAIM');
+    if (canClaimFlag !== 'true') {
       return;
     }
+    
+    const [, , epochId] = claimableInfo as [boolean, bigint, bigint];
 
+    // Check if Merkle data is already loaded
+    if (!merkleData) {
+      return;
+    }
+    
     try {
-      setIsFetchingProof(true);
-      
-      // Fetch Merkle proof from fake backend
-      const merkleProof = await fetchMerkleProof(
-        address,
-        epochId,
-        claimableAmount, // weightedBalance
-        claimableAmount  // claimAmount
-      );
-      
-      console.log('Fetched Merkle proof:', merkleProof);
-      
-      // Now call the contract with the proof
+      // Call the contract with the pre-loaded proof and data from tree
       writeContract({
         ...contractConfig.treasury,
         functionName: 'claimDividends',
         args: [
           epochId,
-          claimableAmount, // weightedBalance
-          claimableAmount, // claimAmount
-          merkleProof as `0x${string}`[] // merkleProof from backend
+          merkleData.weightedBalance, // weightedBalance from tree
+          merkleData.claimAmount,     // claimAmount from tree
+          merkleData.proof            // merkleProof from tree
         ],
       });
     } catch (err) {
       console.error('Claim failed:', err);
       alert('Claim failed. Please try again.');
-    } finally {
-      setIsFetchingProof(false);
     }
   };
 
+  const isClamed = useMemo(() => {
+    const canClaim = claimableInfo?.[0] === false;
+    return isSuccess || (address && merkleData && merkleData.claimAmount > BigInt(0) && canClaim);
+  }, [isSuccess, address, merkleData?.claimAmount, claimableInfo]);
   return (
     <div>
       <div className="ml-0 mr-0 lg:ml-64 lg:mr-64 font-[family-name:var(--font-avenue-mono)] h-screen no-scrollbar overflow-y-scroll snap-y snap-mandatory">
@@ -239,7 +302,7 @@ export default function ClaimPage() {
               <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
                 <AnimatedValue
                   isLoading={!address || !hasCurrentEpochLoaded}
-                  value={userCurrentEpochDividends ? formatTokenBalance(userCurrentEpochDividends) : '0'}
+                  value={merkleData?.claimAmount ? formatTokenBalance(merkleData.claimAmount) : '0'}
                 />
               </p>
             </div>
@@ -257,7 +320,8 @@ export default function ClaimPage() {
             <div className={`${address ? 'w-1/2' : 'w-1/4'}`}>
               <div className="space-y-2">
                 <p className="text-sm p-2 text-white font-[family-name:var(--font-martian-mono)]">
-                  
+                 {merkleData?.claimAmount  ? 'You are eligible to claim ' + formatTokenBalance(merkleData.claimAmount) + ' PENGU' 
+                 : address ? 'You are not eligible to claim any dividends' : ''} 
                 </p>
               </div>
             </div>
@@ -269,22 +333,27 @@ export default function ClaimPage() {
                   return (
                     <button 
                       onClick={isConnected ? handleClaim : show}
-                      className="w-full px-2 py-6 flex items-center justify-center transition-colors hover:opacity-80 cursor-pointer"
+                      className="w-full px-2 py-6 flex items-center justify-center transition-colors hover:opacity-80 disabled:opacity-50 cursor-pointer"
                       style={{
                         backgroundColor: 'rgba(96, 255, 255, 0.12)',
                         border: '1px solid rgba(20, 78, 82, 1)'
                       }}
+                      disabled={isConnected && (isClaimableInfoLoading || 
+                        isLoadingMerkleData || 
+                        isPending || 
+                          isConfirming ||
+                          isClamed ||
+                          !merkleData || 
+                          merkleData.claimAmount === BigInt(0))}
                     >
                       <span className="text-[24px] lg:text-[48px] font-normal leading-[100%] tracking-[0%] text-center font-[family-name:var(--font-random-grotesque)]"
                         style={{ color: 'rgba(0, 255, 251, 1)' }}
                       >
                         {isConnecting ? (
                           <div className="animate-spin w-4 h-4 lg:w-8 lg:h-8 border-2 border-current border-t-transparent rounded-full" />
-                        ) : isFetchingProof ? (
-                          'FETCHING PROOF...'
-                        ) : isPending || isConfirming ? (
+                        ) : isPending || isConfirming || isLoadingMerkleData || isClaimableInfoLoading ? (
                           <div className="animate-spin w-4 h-4 lg:w-8 lg:h-8 border-2 border-current border-t-transparent rounded-full" />
-                        ) : isSuccess ? (
+                        ) : isSuccess || isClamed ? (
                           'CLAIMED!'
                         ) : (
                           isConnected ? 'CLAIM' : 'CONNECT WALLET'
@@ -365,10 +434,16 @@ export default function ClaimPage() {
             <div className="flex-1 h-full min-h-[100px] p-2"></div>
             <div className="flex-1 h-full border-l p-2 border-[var(--color-border-accent)]"></div>
             <div className="flex-1 h-full border-l p-2 border-[var(--color-border-accent)]"></div>
-            <div className="flex-1 h-full border-l p-2 border-[var(--color-border-accent)]"></div>
           </div>
         </main>
       </div>
+      
+      {/* Success Popup */}
+      <SuccessPopup
+        isVisible={showSuccessPopup}
+        onClose={() => setShowSuccessPopup(false)}
+        claimAmount={successClaimAmount}
+      />
     </div>
     </div>
   );

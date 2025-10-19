@@ -7,11 +7,22 @@ import { contractConfig, formatTokenBalance, CONTRACT_ADDRESSES } from '@/lib/co
 import Link from 'next/link';
 
 const TreasurySection: React.FC = () => {
-  // Get PENGU balance from Treasury contract
-  const { data: treasuryBalance, isLoading: isTreasuryLoading } = useReadContract({
+  // Get current epoch ID
+  const { data: currentEpochId } = useReadContract({
     ...contractConfig.treasury,
-    functionName: 'getContractBalance',
+    functionName: 'currentEpoch',
     query: {
+      refetchInterval: 30000, // 30 seconds
+    },
+  });
+
+  // Get epoch info for current epoch
+  const { data: epochInfo, isLoading: isEpochInfoLoading } = useReadContract({
+    ...contractConfig.treasury,
+    functionName: 'getEpochInfo',
+    args: currentEpochId ? [currentEpochId] : undefined,
+    query: {
+      enabled: !!currentEpochId,
       refetchInterval: 30000, // 30 seconds
     },
   });
@@ -29,15 +40,15 @@ const TreasurySection: React.FC = () => {
   const [penguPrice, setPenguPrice] = useState<number>(0);
 
   // Track loading states
-  const [hasTreasuryLoaded, setHasTreasuryLoaded] = React.useState(false);
+  const [hasEpochInfoLoaded, setHasEpochInfoLoaded] = React.useState(false);
   const [hasTotalClaimedLoaded, setHasTotalClaimedLoaded] = React.useState(false);
   const [hasPenguPriceLoaded, setHasPenguPriceLoaded] = React.useState(false);
 
   useEffect(() => {
-    if (!isTreasuryLoading && treasuryBalance !== undefined) {
-      setHasTreasuryLoaded(true);
+    if (!isEpochInfoLoading && epochInfo !== undefined) {
+      setHasEpochInfoLoaded(true);
     }
-  }, [isTreasuryLoading, treasuryBalance]);
+  }, [isEpochInfoLoading, epochInfo]);
 
   useEffect(() => {
     if (!isTotalClaimedLoading && totalClaimed !== undefined) {
@@ -76,6 +87,9 @@ const TreasurySection: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Extract total dividends from epoch info
+  const totalDividends = epochInfo ? epochInfo[2] : undefined; // totalDividends is at index 2
+
   // Calculate USD values
   const calculateUSDValue = (penguAmount: bigint | undefined, price: number): string => {
     if (!penguAmount || !price || !hasPenguPriceLoaded) return '0.00';
@@ -86,7 +100,7 @@ const TreasurySection: React.FC = () => {
     return usdValue.toFixed(0);
   };
 
-  const treasuryUSDValue = calculateUSDValue(treasuryBalance, penguPrice);
+  const treasuryUSDValue = calculateUSDValue(totalDividends, penguPrice);
 
   return (
     <div>
@@ -113,8 +127,8 @@ const TreasurySection: React.FC = () => {
           </p>
           <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
             <AnimatedValue
-              isLoading={!hasTreasuryLoaded}
-              value={treasuryBalance ? formatTokenBalance(treasuryBalance, 18, 0) : '0'}
+              isLoading={!hasEpochInfoLoaded}
+              value={totalDividends ? formatTokenBalance(totalDividends, 18, 0) : '0'}
             />
           </p>
         </div>
@@ -142,7 +156,7 @@ const TreasurySection: React.FC = () => {
             </span>
             <span className="text-[48px] lg:text-[72px] font-normal leading-[100%] tracking-[0%] text-[#00FF00] font-[family-name:var(--font-random-grotesque)]">
               <AnimatedValue
-                isLoading={!hasTreasuryLoaded || !hasPenguPriceLoaded}
+                isLoading={!hasEpochInfoLoaded || !hasPenguPriceLoaded}
                 value={`$${treasuryUSDValue}`}
               />
             </span>
