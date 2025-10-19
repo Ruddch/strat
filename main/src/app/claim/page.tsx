@@ -241,12 +241,6 @@ export default function ClaimPage() {
   const handleClaim = async () => {
     if (!claimableInfo || !address) return;
     
-    // Check if CAN_CLAIM flag is set in localStorage
-    const canClaimFlag = localStorage.getItem('CAN_CLAIM');
-    if (canClaimFlag !== 'true') {
-      return;
-    }
-    
     const [, , epochId] = claimableInfo as [boolean, bigint, bigint];
 
     // Check if Merkle data is already loaded
