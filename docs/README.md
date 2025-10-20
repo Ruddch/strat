@@ -43,5 +43,5 @@ Every transaction strengthens the PENGU ecosystem, reduces PST supply through bu
 
 ## 🔗 Useful Links
 
-- [**🌐 Website**](https://pengustrategy.com)
-- [**🐦 Twitter**](https://twitter.com/pengustrategy)
+- [**🌐 Website**](https://pengustrategy.net)
+- [**🐦 Twitter**](https://x.com/PudgyInvest)
