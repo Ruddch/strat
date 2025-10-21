@@ -7,7 +7,6 @@ import MetricsSection from "@/components/MetricsSection";
 import TakeProfitTable from "@/components/TakeProfitTable";
 import LastBuysTable from "@/components/LastBuysTable";
 import TreasurySection from "@/components/TreasurySection";
-import TradingSection from "@/components/TradingSection";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import { useReadContract } from "wagmi";
 import { contractConfig } from "@/lib/contracts"; 
@@ -26,7 +25,6 @@ const ResponsiveBackgroundEffects = dynamic(() => import("@/components/ui/Respon
 export default function Home() {
   //const { address } = useAccount();
   const containerRef = useRef<HTMLDivElement>(null);
-  const tradingRef = useRef<HTMLDivElement>(null);
   const howItWorksRef = useRef<HTMLDivElement>(null);
   const takeProfitRef = useRef<HTMLDivElement>(null);
   const lastBuysRef = useRef<HTMLDivElement>(null);
@@ -144,13 +142,6 @@ export default function Home() {
       <div id="how-it-works" ref={howItWorksRef} className="relative min-h-screen z-10 text-white snap-start">
         <HowItWorksSection />
       </div>
-
-      {/* Second Section - Trading */}
-      <div id="trading" ref={tradingRef} className="relative min-h-screen z-10 text-white snap-start">
-        <TradingSection />
-      </div>
-
-     
 
       {/* Fourth Section - Take Profit */}
       <div id="take-profit" ref={takeProfitRef} className="relative min-h-screen z-10 text-white snap-start">

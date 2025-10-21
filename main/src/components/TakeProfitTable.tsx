@@ -131,27 +131,51 @@ const TakeProfitTable: React.FC = () => {
           const ethSpentNumber = Number(lot.ethSpent) / 1e18; // Convert from wei to ETH
           const predictedGain = isEthPriceLoading ? 0 : ethSpentNumber * multiplier * ethPrice;
           
+          // Calculate progress from buy price to sell price
+          const buyPrice = Number(lot.avgPriceWeiPerPengu) / 1e18;
+          const sellPrice = Number((lot.avgPriceWeiPerPengu * BigInt(110)) / BigInt(100)) / 1e18;
+          const currentPrice = isPenguPriceLoading ? 0 : penguPrice;
+          
+          // Calculate progress percentage (0-100%) with easing curve
+          let progressPercentage = 0;
+          if (sellPrice > buyPrice && currentPrice >= buyPrice) {
+            const linearProgress = Math.min(100, Math.max(0, ((currentPrice - buyPrice) / (sellPrice - buyPrice)) * 100));
+            progressPercentage = 1 - Math.pow(1 - linearProgress / 100, 3);
+            progressPercentage = Math.min(100, Math.max(0, progressPercentage * 100));
+          }
+          
           return (
-            <div key={lot.id} className={`flex w-full ${index % 2 === 1 ? 'bg-[rgba(96,255,255,0.05)]' : ''}`}>
-              <div className="flex-1 text-left p-2 pb-8 pt-8 border-b border-[var(--color-border-accent)]">
-                <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-white font-[family-name:var(--font-random-grotesque)]">
-                  {formatTokenBalance(lot.amountPengu, 18, 0)}
-                </span>
-              </div>
-              <div className="flex-1 border-l p-2 pb-8 pt-8 border-b border-[var(--color-border-accent)]">
-                <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-white font-[family-name:var(--font-random-grotesque)]">
-                  {formatTokenPrice(lot.avgPriceWeiPerPengu)}
-                </span>
-              </div>
-              <div className="flex-1 border-l p-2 pb-8 pt-8 border-b border-[var(--color-border-accent)]">
-                <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-white font-[family-name:var(--font-random-grotesque)]">
-                  {formatTokenPrice((lot.avgPriceWeiPerPengu * BigInt(110)) / BigInt(100))}
-                </span>
-              </div>
-              <div className="flex-1 p-2 pb-8 pt-8 border-l border-b border-[var(--color-border-accent)]">
-                <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-[#00FF00] font-[family-name:var(--font-random-grotesque)]">
-                  ${predictedGain.toFixed(2)}
-                </span>
+            <div key={lot.id} className="relative overflow-hidden">
+              {/* Progress Bar Background */}
+              <div 
+                className="absolute inset-0 bg-gradient-to-r from-[rgba(96,255,255,0.1)] to-[rgba(0,255,0,0.1)] transition-all duration-500 ease-out"
+                style={{ width: `${progressPercentage}%` }}
+              />
+              
+              {/* Table Row Content */}
+              <div className={`relative flex w-full ${index % 2 === 1 ? 'bg-[rgba(96,255,255,0.05)]' : ''}`}>
+                <div className="flex-1 text-left p-2 pb-8 pt-8 border-b border-[var(--color-border-accent)]">
+                  <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-white font-[family-name:var(--font-random-grotesque)]">
+                    {formatTokenBalance(lot.amountPengu, 18, 0)}
+                  </span>
+                </div>
+                <div className="flex-1 border-l p-2 pb-8 pt-8 border-b border-[var(--color-border-accent)]">
+                  <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-white font-[family-name:var(--font-random-grotesque)]">
+                    {formatTokenPrice(lot.avgPriceWeiPerPengu)}
+                  </span>
+                </div>
+                <div className="flex-1 border-l p-2 pb-8 pt-8 border-b border-[var(--color-border-accent)]">
+                  <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-white font-[family-name:var(--font-random-grotesque)]">
+                    {formatTokenPrice((lot.avgPriceWeiPerPengu * BigInt(110)) / BigInt(100))}
+                  </span>
+                </div>
+                <div className="flex-1 p-2 pb-8 pt-8 border-l border-b border-[var(--color-border-accent)]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[20px] lg:text-[40px] font-normal leading-[100%] tracking-[0%] text-[#00FF00] font-[family-name:var(--font-random-grotesque)]">
+                      ${predictedGain.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           );

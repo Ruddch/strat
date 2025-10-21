@@ -54,16 +54,6 @@ export function Navigation() {
               >
                 How it works
               </button>
-              <button 
-                onClick={() => scrollToSection('trading')}
-                className={`block text-[14px] font-light leading-[150%] tracking-[0%] font-[family-name:var(--font-martian-mono)] hover:opacity-80 transition-opacity cursor-pointer ${
-                  activeSection === 'trading' 
-                    ? 'text-[var(--color-text-accent)]' 
-                    : 'text-white'
-                }`}
-              >
-                Trading
-              </button>
               
               <button 
                 onClick={() => scrollToSection('take-profit')}
