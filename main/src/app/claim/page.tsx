@@ -285,7 +285,7 @@ export default function ClaimPage() {
               <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
                 <AnimatedValue
                   isLoading={!address || !hasInitiallyLoaded}
-                  value={userClaimedDividends ? formatTokenBalance(userClaimedDividends) : '0'}
+                  value={userClaimedDividends ? formatTokenBalance(userClaimedDividends, 18, 0) : '0'}
                 />
               </p>
             </div>
@@ -296,7 +296,7 @@ export default function ClaimPage() {
               <p className="text-[60px] lg:text-[124px] font-normal leading-[100%] tracking-[0%] text-center text-[var(--color-text-accent)] font-[family-name:var(--font-random-grotesque)]">
                 <AnimatedValue
                   isLoading={!address || !hasCurrentEpochLoaded}
-                  value={merkleData?.claimAmount ? formatTokenBalance(merkleData.claimAmount) : '0'}
+                  value={merkleData?.claimAmount ? formatTokenBalance(merkleData.claimAmount, 18, 0) : '0'}
                 />
               </p>
             </div>

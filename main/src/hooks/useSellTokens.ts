@@ -1,14 +1,14 @@
 "use client";
 
-import { useWriteContract, useAccount, useReadContract } from "wagmi";
+import { useWriteContract, useAccount, useReadContract, usePublicClient } from "wagmi";
 import { parseUnits, maxUint256 } from "viem";
 import { CONTRACT_ADDRESSES, ROUTER_ABI, STRAT_TOKEN_ABI } from "@/lib/contracts/config";
 
 export function useSellTokens() {
   const { writeContract, isPending, error } = useWriteContract();
   const { address } = useAccount();
+  const publicClient = usePublicClient();
 
-  // Проверяем текущий allowance
   const { data: allowance } = useReadContract({
     address: CONTRACT_ADDRESSES.STRAT_TOKEN as `0x${string}`,
     abi: STRAT_TOKEN_ABI,
@@ -19,32 +19,40 @@ export function useSellTokens() {
     },
   });
 
-  const sellTokens = async (tokenAmount: string) => {
+  const sellTokens = async (tokenAmount: string, slippageBps: number = 1100) => {
     if (!address) {
       throw new Error("Wallet not connected");
     }
 
+    if (!publicClient) {
+      throw new Error("Public client not available");
+    }
+
     const tokenAmountWei = parseUnits(tokenAmount, 18);
     
-    // Путь для свапа: STRAT Token -> ETH
     const path = [
       CONTRACT_ADDRESSES.STRAT_TOKEN,
       CONTRACT_ADDRESSES.WETH
     ];
 
-    // Минимальное количество ETH (5% slippage)
-    const amountOutMin = BigInt(0); // Можно добавить расчет минимального количества
+    const amountsOut = await publicClient.readContract({
+      address: CONTRACT_ADDRESSES.ROUTER as `0x${string}`,
+      abi: ROUTER_ABI,
+      functionName: "getAmountsOut",
+      args: [tokenAmountWei, path],
+    });
 
-    // Дедлайн (20 минут)
+    const expectedAmount = amountsOut[amountsOut.length - 1];
+    const slippageMultiplier = BigInt(10000 - slippageBps);
+    const amountOutMin = (expectedAmount * slippageMultiplier) / BigInt(10000);
+
     const deadline = Math.floor(Date.now() / 1000) + 1200;
 
     try {
-      // Проверяем, достаточно ли allowance для продажи
       const currentAllowance = allowance || BigInt(0);
       console.log("allowance", allowance);
       
       if (currentAllowance < tokenAmountWei) {
-        // Если allowance недостаточно, запрашиваем approve
         await writeContract({
           address: CONTRACT_ADDRESSES.STRAT_TOKEN as `0x${string}`,
           abi: STRAT_TOKEN_ABI,
@@ -53,7 +61,6 @@ export function useSellTokens() {
         });
       }
 
-      // Выполняем продажу
       await writeContract({
         address: CONTRACT_ADDRESSES.ROUTER as `0x${string}`,
         abi: ROUTER_ABI,
@@ -70,6 +77,6 @@ export function useSellTokens() {
     sellTokens,
     isPending,
     error,
-    allowance, // Экспортируем allowance для отображения статуса
+    allowance,
   };
 }

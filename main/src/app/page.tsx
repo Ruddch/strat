@@ -10,6 +10,7 @@ import TreasurySection from "@/components/TreasurySection";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import { useReadContract } from "wagmi";
 import { contractConfig } from "@/lib/contracts"; 
+import TradingSection from "@/components/TradingSection";
 
 const ProgressBar = dynamic(() => import("@/components/ui/ProgressBar").then(mod => ({ default: mod.ProgressBar })), { 
   ssr: false 
@@ -29,6 +30,7 @@ export default function Home() {
   const takeProfitRef = useRef<HTMLDivElement>(null);
   const lastBuysRef = useRef<HTMLDivElement>(null);
   const treasuryRef = useRef<HTMLDivElement>(null);
+  const tradingRef = useRef<HTMLDivElement>(null);
   const { setActiveSection } = useScroll();
 
   // Get FeeCollector config (threshold) and ETH balance for progress bar
@@ -141,6 +143,11 @@ export default function Home() {
       {/* Fourth Section - How it works */}
       <div id="how-it-works" ref={howItWorksRef} className="relative min-h-screen z-10 text-white snap-start">
         <HowItWorksSection />
+      </div>
+
+      {/* Third Section - Trading */}
+      <div id="trading" ref={tradingRef} className="relative min-h-screen z-10 text-white snap-start">
+        <TradingSection />
       </div>
 
       {/* Fourth Section - Take Profit */}

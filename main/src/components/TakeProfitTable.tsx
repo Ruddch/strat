@@ -240,7 +240,7 @@ const TakeProfitTable: React.FC = () => {
                 const ethSpentNumber = Number(lot.ethSpent) / 1e18;
                 const predictedGain = isEthPriceLoading ? 0 : ethSpentNumber * 1.1 * ethPrice;
                 return total + predictedGain;
-              }, 0).toFixed(2)}
+              }, 0).toFixed(0)}
             </span>
           </div>
         </div>
