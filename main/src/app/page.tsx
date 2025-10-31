@@ -132,7 +132,7 @@ export default function Home() {
               <div className="flex-1 border-l p-2 pb-13 border-[var(--color-border-accent)]"></div>
               <div className="flex-1 text-right p-2 pb-13 border-l border-[var(--color-border-accent)]">
                 <span className="text-sm text-right text-gray-300 font-[family-name:var(--font-martian-mono)]">
-                  1 ETH
+                  0.2 ETH
                 </span>
               </div>
             </div>
